@@ -144,6 +144,20 @@ button:hover {
   gap: 16px;
 }
 
+.admin {
+  margin: 32px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
 .form-card {
   background: var(--card);
   border-radius: 16px;
@@ -248,6 +262,57 @@ tr.selected {
 
 .detail-card h3 {
   margin-top: 0;
+}
+
+.detail-metrics {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 16px 0 12px;
+}
+
+.metric-item {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.metric-item strong {
+  color: var(--text);
+  font-size: 16px;
+}
+
+.detail-block {
+  margin-top: 16px;
+}
+
+.detail-block h4 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.detail-table {
+  overflow-x: auto;
+}
+
+.detail-table table {
+  min-width: 420px;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.detail-table th,
+.detail-table td {
+  padding: 10px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
 }
 
 .vehicle-list {

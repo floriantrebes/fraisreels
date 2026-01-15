@@ -76,7 +76,7 @@
                 name="name"
                 type="text"
                 required
-                maxlength="120"
+                maxlength="100"
                 placeholder="Foyer Martin"
               />
             </label>
@@ -132,7 +132,7 @@
                 name="name"
                 type="text"
                 required
-                maxlength="120"
+                maxlength="100"
                 placeholder="Peugeot 308"
               />
             </label>
@@ -299,6 +299,269 @@
         </div>
       </section>
 
+      <section class="admin" aria-label="Administration des entités">
+        <div class="forms-header">
+          <div>
+            <h2>Administration des entités</h2>
+            <p class="subtitle">
+              Consultez, modifiez et supprimez les référentiels.
+            </p>
+          </div>
+          <div class="controls">
+            <button id="admin-refresh" type="button">
+              Rafraîchir les listes
+            </button>
+          </div>
+          <p class="hint" id="admin-status">
+            Chargement des référentiels...
+          </p>
+        </div>
+        <div class="admin-grid">
+          <div class="table-card">
+            <div class="table-header">
+              <h3>Foyers enregistrés</h3>
+              <p class="hint">Identifiants utilisés pour les créations.</p>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Nom</th>
+                  </tr>
+                </thead>
+                <tbody id="households-table"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="table-card">
+            <div class="table-header">
+              <h3>Personnes</h3>
+              <p class="hint">Liées à leur foyer de rattachement.</p>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Foyer</th>
+                    <th>Nom</th>
+                  </tr>
+                </thead>
+                <tbody id="persons-table"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="table-card">
+            <div class="table-header">
+              <h3>Véhicules</h3>
+              <p class="hint">Flotte professionnelle par personne.</p>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Personne</th>
+                    <th>Véhicule</th>
+                    <th>CV</th>
+                  </tr>
+                </thead>
+                <tbody id="vehicles-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="forms-grid">
+          <form id="household-update-form" class="form-card">
+            <h3>Modifier un foyer</h3>
+            <label class="field">
+              <span>ID du foyer</span>
+              <input name="id" type="number" min="1" required />
+            </label>
+            <label class="field">
+              <span>Nouveau nom</span>
+              <input name="name" type="text" maxlength="100" required />
+            </label>
+            <button type="submit">Mettre à jour</button>
+          </form>
+          <form id="household-delete-form" class="form-card">
+            <h3>Supprimer un foyer</h3>
+            <label class="field">
+              <span>ID du foyer</span>
+              <input name="id" type="number" min="1" required />
+            </label>
+            <button type="submit">Supprimer</button>
+          </form>
+          <form id="person-update-form" class="form-card">
+            <h3>Modifier une personne</h3>
+            <label class="field">
+              <span>ID de la personne</span>
+              <input name="id" type="number" min="1" required />
+            </label>
+            <label class="field">
+              <span>ID du foyer</span>
+              <input name="household_id" type="number" min="1" required />
+            </label>
+            <label class="field">
+              <span>Prénom</span>
+              <input name="first_name" type="text" maxlength="80" required />
+            </label>
+            <label class="field">
+              <span>Nom</span>
+              <input name="last_name" type="text" maxlength="80" required />
+            </label>
+            <button type="submit">Mettre à jour</button>
+          </form>
+          <form id="person-delete-form" class="form-card">
+            <h3>Supprimer une personne</h3>
+            <label class="field">
+              <span>ID de la personne</span>
+              <input name="id" type="number" min="1" required />
+            </label>
+            <button type="submit">Supprimer</button>
+          </form>
+          <form id="vehicle-update-form" class="form-card">
+            <h3>Modifier un véhicule</h3>
+            <label class="field">
+              <span>ID du véhicule</span>
+              <input name="id" type="number" min="1" required />
+            </label>
+            <label class="field">
+              <span>ID de la personne</span>
+              <input name="person_id" type="number" min="1" required />
+            </label>
+            <label class="field">
+              <span>Nom</span>
+              <input name="name" type="text" maxlength="100" required />
+            </label>
+            <label class="field">
+              <span>Puissance fiscale (CV)</span>
+              <input name="power_cv" type="number" min="1" required />
+            </label>
+            <button type="submit">Mettre à jour</button>
+          </form>
+          <form id="vehicle-delete-form" class="form-card">
+            <h3>Supprimer un véhicule</h3>
+            <label class="field">
+              <span>ID du véhicule</span>
+              <input name="id" type="number" min="1" required />
+            </label>
+            <button type="submit">Supprimer</button>
+          </form>
+          <form id="mileage-update-form" class="form-card">
+            <h3>Modifier un kilométrage</h3>
+            <label class="field">
+              <span>ID de l'entrée</span>
+              <input name="id" type="number" min="1" required />
+            </label>
+            <label class="field">
+              <span>ID de la personne</span>
+              <input name="person_id" type="number" min="1" required />
+            </label>
+            <label class="field">
+              <span>ID du véhicule</span>
+              <input name="vehicle_id" type="number" min="1" required />
+            </label>
+            <label class="field">
+              <span>Année</span>
+              <input name="year" type="number" min="2000" max="2100" required />
+            </label>
+            <label class="field">
+              <span>Mois</span>
+              <input name="month" type="number" min="1" max="12" required />
+            </label>
+            <label class="field">
+              <span>Kilomètres</span>
+              <input name="km" type="number" min="0" step="0.1" required />
+            </label>
+            <button type="submit">Mettre à jour</button>
+          </form>
+          <form id="mileage-delete-form" class="form-card">
+            <h3>Supprimer un kilométrage</h3>
+            <label class="field">
+              <span>ID de l'entrée</span>
+              <input name="id" type="number" min="1" required />
+            </label>
+            <button type="submit">Supprimer</button>
+          </form>
+          <form id="meal-update-form" class="form-card">
+            <h3>Modifier un repas</h3>
+            <label class="field">
+              <span>ID du repas</span>
+              <input name="id" type="number" min="1" required />
+            </label>
+            <label class="field">
+              <span>ID de la personne</span>
+              <input name="person_id" type="number" min="1" required />
+            </label>
+            <label class="field">
+              <span>Année</span>
+              <input name="year" type="number" min="2000" max="2100" required />
+            </label>
+            <label class="field">
+              <span>Mois</span>
+              <input name="month" type="number" min="1" max="12" required />
+            </label>
+            <label class="field">
+              <span>Montant</span>
+              <input
+                name="meal_cost"
+                type="number"
+                min="0"
+                step="0.01"
+                required
+              />
+            </label>
+            <button type="submit">Mettre à jour</button>
+          </form>
+          <form id="meal-delete-form" class="form-card">
+            <h3>Supprimer un repas</h3>
+            <label class="field">
+              <span>ID du repas</span>
+              <input name="id" type="number" min="1" required />
+            </label>
+            <button type="submit">Supprimer</button>
+          </form>
+          <form id="other-update-form" class="form-card">
+            <h3>Modifier un frais divers</h3>
+            <label class="field">
+              <span>ID du frais</span>
+              <input name="id" type="number" min="1" required />
+            </label>
+            <label class="field">
+              <span>ID de la personne</span>
+              <input name="person_id" type="number" min="1" required />
+            </label>
+            <label class="field">
+              <span>Année</span>
+              <input name="year" type="number" min="2000" max="2100" required />
+            </label>
+            <label class="field">
+              <span>Description</span>
+              <input name="description" type="text" maxlength="160" required />
+            </label>
+            <label class="field">
+              <span>Montant</span>
+              <input name="amount" type="number" min="0" step="0.01" required />
+            </label>
+            <label class="field">
+              <span>Justificatif</span>
+              <input name="attachment_path" type="text" />
+            </label>
+            <button type="submit">Mettre à jour</button>
+          </form>
+          <form id="other-delete-form" class="form-card">
+            <h3>Supprimer un frais divers</h3>
+            <label class="field">
+              <span>ID du frais</span>
+              <input name="id" type="number" min="1" required />
+            </label>
+            <button type="submit">Supprimer</button>
+          </form>
+        </div>
+      </section>
+
       <section class="filters" aria-label="Filtres">
         <label class="field">
           <span>Recherche</span>
@@ -338,7 +601,7 @@
           </div>
         </div>
         <aside class="detail-card" aria-live="polite">
-          <h3>Détail par véhicule</h3>
+          <h3>Détail annuel</h3>
           <div id="detail-panel">
             <p class="hint">Sélectionnez une personne.</p>
           </div>
