@@ -46,6 +46,21 @@ def on_startup() -> None:
     init_db()
 
 
+@app.get("/")
+def root() -> dict[str, str]:
+    """Role: Provide a basic health response.
+
+    Inputs: None.
+    Outputs: A JSON payload with service metadata.
+    Errors: None.
+    """
+
+    return {
+        "status": "ok",
+        "service": "Frais Reels API",
+    }
+
+
 @app.post("/households", response_model=HouseholdResponse)
 def create_household_endpoint(payload: HouseholdCreate) -> HouseholdResponse:
     """Create a household."""
