@@ -55,6 +55,250 @@
         </div>
       </section>
 
+      <section class="forms" aria-label="Gestion des données">
+        <div class="forms-header">
+          <div>
+            <h2>Créer des entités</h2>
+            <p class="subtitle">
+              Ajoutez foyers, personnes, véhicules et dépenses.
+            </p>
+          </div>
+          <p class="hint" id="form-status">
+            Utilisez les formulaires ci-dessous pour saisir vos données.
+          </p>
+        </div>
+        <div class="forms-grid">
+          <form id="household-form" class="form-card">
+            <h3>Foyer</h3>
+            <label class="field">
+              <span>Nom du foyer</span>
+              <input
+                name="name"
+                type="text"
+                required
+                maxlength="120"
+                placeholder="Foyer Martin"
+              />
+            </label>
+            <button type="submit">Créer le foyer</button>
+          </form>
+          <form id="person-form" class="form-card">
+            <h3>Personne</h3>
+            <label class="field">
+              <span>ID du foyer</span>
+              <input
+                name="household_id"
+                type="number"
+                min="1"
+                required
+                placeholder="1"
+              />
+            </label>
+            <label class="field">
+              <span>Prénom</span>
+              <input
+                name="first_name"
+                type="text"
+                required
+                maxlength="80"
+              />
+            </label>
+            <label class="field">
+              <span>Nom</span>
+              <input
+                name="last_name"
+                type="text"
+                required
+                maxlength="80"
+              />
+            </label>
+            <button type="submit">Créer la personne</button>
+          </form>
+          <form id="vehicle-form" class="form-card">
+            <h3>Véhicule</h3>
+            <label class="field">
+              <span>ID de la personne</span>
+              <input
+                name="person_id"
+                type="number"
+                min="1"
+                required
+                placeholder="1"
+              />
+            </label>
+            <label class="field">
+              <span>Nom</span>
+              <input
+                name="name"
+                type="text"
+                required
+                maxlength="120"
+                placeholder="Peugeot 308"
+              />
+            </label>
+            <label class="field">
+              <span>Puissance fiscale (CV)</span>
+              <input
+                name="power_cv"
+                type="number"
+                min="1"
+                required
+                placeholder="5"
+              />
+            </label>
+            <button type="submit">Créer le véhicule</button>
+          </form>
+          <form id="mileage-form" class="form-card">
+            <h3>Kilométrage</h3>
+            <label class="field">
+              <span>ID de la personne</span>
+              <input
+                name="person_id"
+                type="number"
+                min="1"
+                required
+              />
+            </label>
+            <label class="field">
+              <span>ID du véhicule</span>
+              <input
+                name="vehicle_id"
+                type="number"
+                min="1"
+                required
+              />
+            </label>
+            <label class="field">
+              <span>Année</span>
+              <input
+                name="year"
+                type="number"
+                min="2000"
+                max="2100"
+                required
+                value="2024"
+              />
+            </label>
+            <label class="field">
+              <span>Mois</span>
+              <input
+                name="month"
+                type="number"
+                min="1"
+                max="12"
+                required
+              />
+            </label>
+            <label class="field">
+              <span>Kilomètres</span>
+              <input
+                name="km"
+                type="number"
+                min="0"
+                step="0.1"
+                required
+              />
+            </label>
+            <button type="submit">Ajouter</button>
+          </form>
+          <form id="meal-form" class="form-card">
+            <h3>Frais de repas</h3>
+            <label class="field">
+              <span>ID de la personne</span>
+              <input
+                name="person_id"
+                type="number"
+                min="1"
+                required
+              />
+            </label>
+            <label class="field">
+              <span>Année</span>
+              <input
+                name="year"
+                type="number"
+                min="2000"
+                max="2100"
+                required
+                value="2024"
+              />
+            </label>
+            <label class="field">
+              <span>Mois</span>
+              <input
+                name="month"
+                type="number"
+                min="1"
+                max="12"
+                required
+              />
+            </label>
+            <label class="field">
+              <span>Montant</span>
+              <input
+                name="meal_cost"
+                type="number"
+                min="0"
+                step="0.01"
+                required
+              />
+            </label>
+            <button type="submit">Ajouter</button>
+          </form>
+          <form id="other-expense-form" class="form-card">
+            <h3>Autres frais</h3>
+            <label class="field">
+              <span>ID de la personne</span>
+              <input
+                name="person_id"
+                type="number"
+                min="1"
+                required
+              />
+            </label>
+            <label class="field">
+              <span>Année</span>
+              <input
+                name="year"
+                type="number"
+                min="2000"
+                max="2100"
+                required
+                value="2024"
+              />
+            </label>
+            <label class="field">
+              <span>Description</span>
+              <input
+                name="description"
+                type="text"
+                required
+                maxlength="160"
+              />
+            </label>
+            <label class="field">
+              <span>Montant</span>
+              <input
+                name="amount"
+                type="number"
+                min="0"
+                step="0.01"
+                required
+              />
+            </label>
+            <label class="field">
+              <span>Chemin justificatif</span>
+              <input
+                name="attachment_path"
+                type="text"
+                placeholder="factures/repas.pdf"
+              />
+            </label>
+            <button type="submit">Ajouter</button>
+          </form>
+        </div>
+      </section>
+
       <section class="filters" aria-label="Filtres">
         <label class="field">
           <span>Recherche</span>
