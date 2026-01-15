@@ -104,6 +104,27 @@ def fetch_person(person_id: int) -> sqlite3.Row:
         return fetch_one(cursor)
 
 
+def fetch_people_with_households() -> list[sqlite3.Row]:
+    """Role: Fetch all people with household metadata.
+
+    Inputs: None.
+    Outputs: List of people with household names.
+    Errors: Propagates sqlite3.Error if query fails.
+    """
+
+    query = (
+        "SELECT persons.id AS person_id, persons.first_name AS first_name, "
+        "persons.last_name AS last_name, "
+        "households.name AS household_name "
+        "FROM persons "
+        "JOIN households ON households.id = persons.household_id "
+        "ORDER BY persons.last_name, persons.first_name"
+    )
+    with get_connection() as connection:
+        cursor = execute_query(connection, query, ())
+        return list(cursor.fetchall())
+
+
 def create_vehicle(
     person_id: int,
     name: str,

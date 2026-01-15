@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.db import init_db
 from app.models import (
+    DashboardPersonSummary,
+    DashboardResponse,
     HouseholdCreate,
     HouseholdResponse,
     MealExpenseCreate,
@@ -28,6 +34,7 @@ from app.repositories import (
     create_other_expense,
     create_person,
     create_vehicle,
+    fetch_people_with_households,
     fetch_person,
 )
 from app.services import (
@@ -37,6 +44,55 @@ from app.services import (
 )
 
 app = FastAPI(title="Frais Reels")
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+INDEX_FILE = STATIC_DIR / "index.html"
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+YEAR_MIN = 2000
+YEAR_MAX = 2100
+
+
+def validate_year(year: int) -> None:
+    """Role: Validate the dashboard year range.
+
+    Inputs: year integer.
+    Outputs: None.
+    Errors: Raises HTTPException for invalid year.
+    """
+
+    if year < YEAR_MIN or year > YEAR_MAX:
+        raise HTTPException(
+            status_code=400,
+            detail="Year must be between 2000 and 2100",
+        )
+
+
+def build_person_summary(
+    person_id: int,
+    year: int,
+) -> tuple[list[VehicleSummary], float, float, float, float]:
+    """Role: Build yearly summary data for a person.
+
+    Inputs: person_id and year.
+    Outputs: vehicle summaries, vehicle total, meal total, other total, total.
+    Errors: Propagates ValueError from services or repositories.
+    """
+
+    vehicle_deductions = build_vehicle_deductions(person_id, year)
+    vehicles = [
+        VehicleSummary(
+            vehicle_id=item.vehicle_id,
+            vehicle_name=item.vehicle_name,
+            power_cv=item.power_cv,
+            total_km=item.total_km,
+            deduction=item.deduction,
+        )
+        for item in vehicle_deductions
+    ]
+    vehicle_total = sum(vehicle.deduction for vehicle in vehicle_deductions)
+    meals_total = calculate_meals_total(person_id, year)
+    other_total = calculate_other_expenses_total(person_id, year)
+    total = meals_total + other_total + vehicle_total
+    return vehicles, vehicle_total, meals_total, other_total, round(total, 2)
 
 
 @app.on_event("startup")
@@ -59,6 +115,20 @@ def root() -> dict[str, str]:
         "status": "ok",
         "service": "Frais Reels API",
     }
+
+
+@app.get("/dashboard")
+def serve_dashboard() -> FileResponse:
+    """Role: Serve the dashboard HTML page.
+
+    Inputs: None.
+    Outputs: HTML file response for the dashboard.
+    Errors: 404 if the dashboard file is missing.
+    """
+
+    if not INDEX_FILE.exists():
+        raise HTTPException(status_code=404, detail="Dashboard not found")
+    return FileResponse(INDEX_FILE)
 
 
 @app.post("/households", response_model=HouseholdResponse)
@@ -183,25 +253,15 @@ def create_other_expense_endpoint(
 def get_person_summary(person_id: int, year: int) -> PersonYearSummary:
     """Get yearly deduction summary for a person."""
 
+    validate_year(year)
     try:
         fetch_person(person_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    vehicle_deductions = build_vehicle_deductions(person_id, year)
-    meals_total = calculate_meals_total(person_id, year)
-    other_total = calculate_other_expenses_total(person_id, year)
-    vehicles = [
-        VehicleSummary(
-            vehicle_id=item.vehicle_id,
-            vehicle_name=item.vehicle_name,
-            power_cv=item.power_cv,
-            total_km=item.total_km,
-            deduction=item.deduction,
-        )
-        for item in vehicle_deductions
-    ]
-    total = meals_total + other_total
-    total += sum(vehicle.deduction for vehicle in vehicle_deductions)
+    vehicles, _, meals_total, other_total, total = build_person_summary(
+        person_id,
+        year,
+    )
     return PersonYearSummary(
         person_id=person_id,
         year=year,
@@ -209,4 +269,44 @@ def get_person_summary(person_id: int, year: int) -> PersonYearSummary:
         meals_deduction=meals_total,
         other_expenses=other_total,
         total_deduction=round(total, 2),
+    )
+
+
+@app.get("/api/dashboard/{year}", response_model=DashboardResponse)
+def get_dashboard(year: int) -> DashboardResponse:
+    """Role: Provide the yearly dashboard summary.
+
+    Inputs: year path parameter.
+    Outputs: Dashboard summary with per-person deductions.
+    Errors: 404 if no people exist for the dashboard.
+    """
+
+    validate_year(year)
+    people_rows = fetch_people_with_households()
+    if not people_rows:
+        raise HTTPException(status_code=404, detail="No people found")
+    people: list[DashboardPersonSummary] = []
+    total_deduction = 0.0
+    for row in people_rows:
+        vehicles, vehicle_total, meals_total, other_total, total = (
+            build_person_summary(row["person_id"], year)
+        )
+        total_deduction += total
+        people.append(
+            DashboardPersonSummary(
+                person_id=row["person_id"],
+                household_name=row["household_name"],
+                first_name=row["first_name"],
+                last_name=row["last_name"],
+                vehicle_summaries=vehicles,
+                vehicle_deduction_total=round(vehicle_total, 2),
+                meals_deduction=meals_total,
+                other_expenses=other_total,
+                total_deduction=total,
+            )
+        )
+    return DashboardResponse(
+        year=year,
+        people=people,
+        total_deduction=round(total_deduction, 2),
     )
