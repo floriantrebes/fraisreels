@@ -40,6 +40,42 @@ curl -X POST http://127.0.0.1:8000/households \
   -d '{"name": "Foyer Martin"}'
 ```
 
+## Exemple complet (création des entités)
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+curl -X POST http://127.0.0.1:8000/households \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "Foyer Martin"}'
+
+curl -X POST http://127.0.0.1:8000/persons \
+  -H 'Content-Type: application/json' \
+  -d '{"household_id": 1, "first_name": "Alice", "last_name": "Martin"}'
+
+curl -X POST http://127.0.0.1:8000/vehicles \
+  -H 'Content-Type: application/json' \
+  -d '{"person_id": 1, "name": "Peugeot 308", "power_cv": 5}'
+
+curl -X POST http://127.0.0.1:8000/mileage \
+  -H 'Content-Type: application/json' \
+  -d '{"person_id": 1, "vehicle_id": 1, "year": 2024, "month": 5, "km": 1200}'
+
+curl -X POST http://127.0.0.1:8000/meals \
+  -H 'Content-Type: application/json' \
+  -d '{"person_id": 1, "year": 2024, "month": 5, "meal_cost": 18.5}'
+
+curl -X POST http://127.0.0.1:8000/other-expenses \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "person_id": 1,
+    "year": 2024,
+    "description": "Matériel",
+    "amount": 249.9
+  }'
+```
+
 ## Tests
 
 ```bash

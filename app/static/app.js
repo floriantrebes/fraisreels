@@ -6,11 +6,27 @@ const YEAR_INPUT_ID = "year-input";
 const REFRESH_BUTTON_ID = "refresh-button";
 const SEARCH_INPUT_ID = "search-input";
 const STATUS_MESSAGE_ID = "status-message";
+const FORM_STATUS_ID = "form-status";
 const TOTAL_DEDUCTION_ID = "total-deduction";
 const TOTAL_MEALS_ID = "total-meals";
 const TOTAL_OTHER_ID = "total-other";
 const TOTAL_VEHICLES_ID = "total-vehicles";
 const DETAIL_PANEL_ID = "detail-panel";
+const HOUSEHOLD_FORM_ID = "household-form";
+const PERSON_FORM_ID = "person-form";
+const VEHICLE_FORM_ID = "vehicle-form";
+const MILEAGE_FORM_ID = "mileage-form";
+const MEAL_FORM_ID = "meal-form";
+const OTHER_EXPENSE_FORM_ID = "other-expense-form";
+
+const API_ENDPOINTS = {
+  households: "/households",
+  persons: "/persons",
+  vehicles: "/vehicles",
+  mileage: "/mileage",
+  meals: "/meals",
+  otherExpenses: "/other-expenses",
+};
 
 const DEFAULT_SORT = {
   key: "total",
@@ -65,6 +81,138 @@ function getElement(elementId) {
 function setText(elementId, text) {
   const element = getElement(elementId);
   element.textContent = text;
+}
+
+/**
+ * Role: Get a form element by id.
+ * Inputs: formId - DOM form id.
+ * Outputs: HTMLFormElement.
+ * Errors: Throws if the form is missing or invalid.
+ */
+function getForm(formId) {
+  const form = document.getElementById(formId);
+  if (!form) {
+    throw new Error(`Formulaire introuvable: ${formId}`);
+  }
+  if (!(form instanceof HTMLFormElement)) {
+    throw new Error(`Élément invalide: ${formId}`);
+  }
+  return form;
+}
+
+/**
+ * Role: Read a named input value from a form.
+ * Inputs: form and field name.
+ * Outputs: Trimmed string value.
+ * Errors: Throws if the field is missing.
+ */
+function getFormValue(form, name) {
+  const element = form.elements.namedItem(name);
+  if (!element) {
+    throw new Error(`Champ introuvable: ${name}`);
+  }
+  if (!(element instanceof HTMLInputElement)) {
+    throw new Error(`Champ invalide: ${name}`);
+  }
+  return element.value.trim();
+}
+
+/**
+ * Role: Parse a required text field.
+ * Inputs: value, label, and max length.
+ * Outputs: Trimmed string value.
+ * Errors: Throws if invalid.
+ */
+function parseTextField(value, label, maxLength) {
+  if (!value) {
+    throw new Error(`${label} requis.`);
+  }
+  if (maxLength && value.length > maxLength) {
+    throw new Error(`${label} trop long.`);
+  }
+  return value;
+}
+
+/**
+ * Role: Parse an integer field with optional bounds.
+ * Inputs: value, label, min, max.
+ * Outputs: Number.
+ * Errors: Throws if invalid.
+ */
+function parseIntegerField(value, label, min, max) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`${label} invalide.`);
+  }
+  if (min !== null && parsed < min) {
+    throw new Error(`${label} doit être ≥ ${min}.`);
+  }
+  if (max !== null && parsed > max) {
+    throw new Error(`${label} doit être ≤ ${max}.`);
+  }
+  return parsed;
+}
+
+/**
+ * Role: Parse a decimal field with optional bounds.
+ * Inputs: value, label, min.
+ * Outputs: Number.
+ * Errors: Throws if invalid.
+ */
+function parseDecimalField(value, label, min) {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`${label} invalide.`);
+  }
+  if (min !== null && parsed < min) {
+    throw new Error(`${label} doit être ≥ ${min}.`);
+  }
+  return parsed;
+}
+
+/**
+ * Role: Set the form status message.
+ * Inputs: message.
+ * Outputs: None.
+ * Errors: Throws if status element is missing.
+ */
+function setFormStatus(message) {
+  setText(FORM_STATUS_ID, message);
+}
+
+/**
+ * Role: Extract a readable error message.
+ * Inputs: error object.
+ * Outputs: Message string.
+ * Errors: None.
+ */
+function getErrorMessage(error) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "Erreur inattendue.";
+}
+
+/**
+ * Role: Send a JSON POST request.
+ * Inputs: endpoint and payload.
+ * Outputs: Parsed JSON response.
+ * Errors: Throws on non-OK responses.
+ */
+async function postJson(endpoint, payload) {
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    const message = errorText || `Erreur ${response.status}`;
+    throw new Error(message);
+  }
+  return response.json();
 }
 
 /**
@@ -277,6 +425,233 @@ function setStatusMessage(message) {
 }
 
 /**
+ * Role: Build payload for household creation.
+ * Inputs: form element.
+ * Outputs: Payload object.
+ * Errors: Throws on invalid input.
+ */
+function buildHouseholdPayload(form) {
+  const name = parseTextField(
+    getFormValue(form, "name"),
+    "Nom du foyer",
+    120
+  );
+  return {
+    name,
+  };
+}
+
+/**
+ * Role: Build payload for person creation.
+ * Inputs: form element.
+ * Outputs: Payload object.
+ * Errors: Throws on invalid input.
+ */
+function buildPersonPayload(form) {
+  const householdId = parseIntegerField(
+    getFormValue(form, "household_id"),
+    "ID du foyer",
+    1,
+    null
+  );
+  const firstName = parseTextField(
+    getFormValue(form, "first_name"),
+    "Prénom",
+    80
+  );
+  const lastName = parseTextField(
+    getFormValue(form, "last_name"),
+    "Nom",
+    80
+  );
+  return {
+    household_id: householdId,
+    first_name: firstName,
+    last_name: lastName,
+  };
+}
+
+/**
+ * Role: Build payload for vehicle creation.
+ * Inputs: form element.
+ * Outputs: Payload object.
+ * Errors: Throws on invalid input.
+ */
+function buildVehiclePayload(form) {
+  const personId = parseIntegerField(
+    getFormValue(form, "person_id"),
+    "ID de la personne",
+    1,
+    null
+  );
+  const name = parseTextField(
+    getFormValue(form, "name"),
+    "Nom du véhicule",
+    120
+  );
+  const powerCv = parseIntegerField(
+    getFormValue(form, "power_cv"),
+    "Puissance fiscale",
+    1,
+    null
+  );
+  return {
+    person_id: personId,
+    name,
+    power_cv: powerCv,
+  };
+}
+
+/**
+ * Role: Build payload for mileage creation.
+ * Inputs: form element.
+ * Outputs: Payload object.
+ * Errors: Throws on invalid input.
+ */
+function buildMileagePayload(form) {
+  const personId = parseIntegerField(
+    getFormValue(form, "person_id"),
+    "ID de la personne",
+    1,
+    null
+  );
+  const vehicleId = parseIntegerField(
+    getFormValue(form, "vehicle_id"),
+    "ID du véhicule",
+    1,
+    null
+  );
+  const year = parseIntegerField(
+    getFormValue(form, "year"),
+    "Année",
+    2000,
+    2100
+  );
+  const month = parseIntegerField(
+    getFormValue(form, "month"),
+    "Mois",
+    1,
+    12
+  );
+  const km = parseDecimalField(
+    getFormValue(form, "km"),
+    "Kilomètres",
+    0
+  );
+  return {
+    person_id: personId,
+    vehicle_id: vehicleId,
+    year,
+    month,
+    km,
+  };
+}
+
+/**
+ * Role: Build payload for meal expense creation.
+ * Inputs: form element.
+ * Outputs: Payload object.
+ * Errors: Throws on invalid input.
+ */
+function buildMealPayload(form) {
+  const personId = parseIntegerField(
+    getFormValue(form, "person_id"),
+    "ID de la personne",
+    1,
+    null
+  );
+  const year = parseIntegerField(
+    getFormValue(form, "year"),
+    "Année",
+    2000,
+    2100
+  );
+  const month = parseIntegerField(
+    getFormValue(form, "month"),
+    "Mois",
+    1,
+    12
+  );
+  const mealCost = parseDecimalField(
+    getFormValue(form, "meal_cost"),
+    "Montant repas",
+    0
+  );
+  return {
+    person_id: personId,
+    year,
+    month,
+    meal_cost: mealCost,
+  };
+}
+
+/**
+ * Role: Build payload for other expense creation.
+ * Inputs: form element.
+ * Outputs: Payload object.
+ * Errors: Throws on invalid input.
+ */
+function buildOtherExpensePayload(form) {
+  const personId = parseIntegerField(
+    getFormValue(form, "person_id"),
+    "ID de la personne",
+    1,
+    null
+  );
+  const year = parseIntegerField(
+    getFormValue(form, "year"),
+    "Année",
+    2000,
+    2100
+  );
+  const description = parseTextField(
+    getFormValue(form, "description"),
+    "Description",
+    160
+  );
+  const amount = parseDecimalField(
+    getFormValue(form, "amount"),
+    "Montant",
+    0
+  );
+  const attachmentPath = getFormValue(form, "attachment_path");
+  return {
+    person_id: personId,
+    year,
+    description,
+    amount,
+    attachment_path: attachmentPath || null,
+  };
+}
+
+/**
+ * Role: Handle form submissions.
+ * Inputs: submit event, form id, endpoint, payload builder, success message.
+ * Outputs: None.
+ * Errors: Displays error status on failure.
+ */
+async function handleFormSubmit(
+  event,
+  formId,
+  endpoint,
+  buildPayload,
+  successMessage
+) {
+  event.preventDefault();
+  const form = getForm(formId);
+  setFormStatus("Envoi des données...");
+  try {
+    const payload = buildPayload(form);
+    await postJson(endpoint, payload);
+    form.reset();
+    setFormStatus(successMessage);
+    refreshDashboard();
+  } catch (error) {
+    setFormStatus(getErrorMessage(error));
+  }
+}
+
+/**
  * Role: Fetch dashboard data for a given year.
  * Inputs: year number.
  * Outputs: Dashboard response JSON.
@@ -415,6 +790,66 @@ function initializeDashboard() {
   getElement(SEARCH_INPUT_ID).addEventListener(
     "input",
     updateView
+  );
+  getForm(HOUSEHOLD_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleFormSubmit(
+      event,
+      HOUSEHOLD_FORM_ID,
+      API_ENDPOINTS.households,
+      buildHouseholdPayload,
+      "Foyer créé."
+    )
+  );
+  getForm(PERSON_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleFormSubmit(
+      event,
+      PERSON_FORM_ID,
+      API_ENDPOINTS.persons,
+      buildPersonPayload,
+      "Personne créée."
+    )
+  );
+  getForm(VEHICLE_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleFormSubmit(
+      event,
+      VEHICLE_FORM_ID,
+      API_ENDPOINTS.vehicles,
+      buildVehiclePayload,
+      "Véhicule créé."
+    )
+  );
+  getForm(MILEAGE_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleFormSubmit(
+      event,
+      MILEAGE_FORM_ID,
+      API_ENDPOINTS.mileage,
+      buildMileagePayload,
+      "Kilométrage ajouté."
+    )
+  );
+  getForm(MEAL_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleFormSubmit(
+      event,
+      MEAL_FORM_ID,
+      API_ENDPOINTS.meals,
+      buildMealPayload,
+      "Frais de repas ajoutés."
+    )
+  );
+  getForm(OTHER_EXPENSE_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleFormSubmit(
+      event,
+      OTHER_EXPENSE_FORM_ID,
+      API_ENDPOINTS.otherExpenses,
+      buildOtherExpensePayload,
+      "Frais divers ajoutés."
+    )
   );
   document.querySelector("table")
     ?.addEventListener("click", handleRowSelection);
