@@ -18,6 +18,12 @@ class HouseholdResponse(BaseModel):
     name: str
 
 
+class HouseholdUpdate(BaseModel):
+    """Represents a household update request."""
+
+    name: str = Field(min_length=1, max_length=100)
+
+
 class PersonCreate(BaseModel):
     """Represents a person creation request."""
 
@@ -35,6 +41,24 @@ class PersonResponse(BaseModel):
     last_name: str
 
 
+class PersonUpdate(BaseModel):
+    """Represents a person update request."""
+
+    household_id: int
+    first_name: str = Field(min_length=1, max_length=100)
+    last_name: str = Field(min_length=1, max_length=100)
+
+
+class PersonListResponse(BaseModel):
+    """Represents a person list response."""
+
+    id: int
+    household_id: int
+    household_name: str
+    first_name: str
+    last_name: str
+
+
 class VehicleCreate(BaseModel):
     """Represents a vehicle creation request."""
 
@@ -48,6 +72,24 @@ class VehicleResponse(BaseModel):
 
     id: int
     person_id: int
+    name: str
+    power_cv: int
+
+
+class VehicleUpdate(BaseModel):
+    """Represents a vehicle update request."""
+
+    person_id: int
+    name: str = Field(min_length=1, max_length=100)
+    power_cv: int = Field(ge=1, le=50)
+
+
+class VehicleListResponse(BaseModel):
+    """Represents a vehicle list response."""
+
+    id: int
+    person_id: int
+    person_name: str
     name: str
     power_cv: int
 
@@ -73,6 +115,16 @@ class MileageEntryResponse(BaseModel):
     km: float
 
 
+class MileageEntryUpdate(BaseModel):
+    """Represents a mileage entry update request."""
+
+    person_id: int
+    vehicle_id: int
+    year: int = Field(ge=2000, le=2100)
+    month: int = Field(ge=1, le=12)
+    km: float = Field(ge=0)
+
+
 class MealExpenseCreate(BaseModel):
     """Represents a meal expense creation request."""
 
@@ -90,6 +142,15 @@ class MealExpenseResponse(BaseModel):
     year: int
     month: int
     meal_cost: float
+
+
+class MealExpenseUpdate(BaseModel):
+    """Represents a meal expense update request."""
+
+    person_id: int
+    year: int = Field(ge=2000, le=2100)
+    month: int = Field(ge=1, le=12)
+    meal_cost: float = Field(ge=0)
 
 
 class OtherExpenseCreate(BaseModel):
@@ -111,6 +172,65 @@ class OtherExpenseResponse(BaseModel):
     description: str
     amount: float
     attachment_path: str | None
+
+
+class OtherExpenseUpdate(BaseModel):
+    """Represents an other expense update request."""
+
+    person_id: int
+    year: int = Field(ge=2000, le=2100)
+    description: str = Field(min_length=1, max_length=255)
+    amount: float = Field(ge=0)
+    attachment_path: str | None = Field(default=None, max_length=255)
+
+
+class MileageEntryDetail(BaseModel):
+    """Represents a detailed mileage entry."""
+
+    id: int
+    person_id: int
+    vehicle_id: int
+    vehicle_name: str
+    year: int
+    month: int
+    km: float
+
+
+class MealExpenseDetail(BaseModel):
+    """Represents a detailed meal expense entry."""
+
+    id: int
+    person_id: int
+    year: int
+    month: int
+    meal_cost: float
+    deductible_amount: float
+
+
+class OtherExpenseDetail(BaseModel):
+    """Represents a detailed other expense entry."""
+
+    id: int
+    person_id: int
+    year: int
+    description: str
+    amount: float
+    attachment_path: str | None
+
+
+class PersonYearDetail(BaseModel):
+    """Represents detailed yearly operations for a person."""
+
+    person_id: int
+    year: int
+    mileage_entries: list[MileageEntryDetail]
+    meal_expenses: list[MealExpenseDetail]
+    other_expenses: list[OtherExpenseDetail]
+    mileage_total_km: float
+    mileage_deduction_total: float
+    meals_deduction_total: float
+    other_expenses_total: float
+    total_deduction: float
 
 
 class VehicleSummary(BaseModel):

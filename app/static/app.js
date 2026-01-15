@@ -18,6 +18,24 @@ const VEHICLE_FORM_ID = "vehicle-form";
 const MILEAGE_FORM_ID = "mileage-form";
 const MEAL_FORM_ID = "meal-form";
 const OTHER_EXPENSE_FORM_ID = "other-expense-form";
+const ADMIN_REFRESH_ID = "admin-refresh";
+const ADMIN_STATUS_ID = "admin-status";
+const HOUSEHOLDS_TABLE_ID = "households-table";
+const PERSONS_TABLE_ID = "persons-table";
+const VEHICLES_TABLE_ID = "vehicles-table";
+const HOUSEHOLD_UPDATE_FORM_ID = "household-update-form";
+const HOUSEHOLD_DELETE_FORM_ID = "household-delete-form";
+const PERSON_UPDATE_FORM_ID = "person-update-form";
+const PERSON_DELETE_FORM_ID = "person-delete-form";
+const VEHICLE_UPDATE_FORM_ID = "vehicle-update-form";
+const VEHICLE_DELETE_FORM_ID = "vehicle-delete-form";
+const MILEAGE_UPDATE_FORM_ID = "mileage-update-form";
+const MILEAGE_DELETE_FORM_ID = "mileage-delete-form";
+const MEAL_UPDATE_FORM_ID = "meal-update-form";
+const MEAL_DELETE_FORM_ID = "meal-delete-form";
+const OTHER_UPDATE_FORM_ID = "other-update-form";
+const OTHER_DELETE_FORM_ID = "other-delete-form";
+const PERSON_DETAIL_ENDPOINT = "/api/people/";
 
 const API_ENDPOINTS = {
   households: "/households",
@@ -39,6 +57,12 @@ const state = {
   sortKey: DEFAULT_SORT.key,
   sortDirection: DEFAULT_SORT.direction,
   selectedId: null,
+  detail: null,
+  admin: {
+    households: [],
+    persons: [],
+    vehicles: [],
+  },
 };
 
 /**
@@ -55,6 +79,21 @@ function formatCurrency(value) {
     style: "currency",
     currency: "EUR",
     maximumFractionDigits: 2,
+  }).format(value);
+}
+
+/**
+ * Role: Format a number for French locale.
+ * Inputs: value and maximum digits.
+ * Outputs: Formatted numeric string.
+ * Errors: Returns "0" on invalid values.
+ */
+function formatNumber(value, maximumDigits) {
+  if (!Number.isFinite(value)) {
+    return "0";
+  }
+  return new Intl.NumberFormat("fr-FR", {
+    maximumFractionDigits: maximumDigits,
   }).format(value);
 }
 
@@ -194,70 +233,232 @@ function getErrorMessage(error) {
 }
 
 /**
- * Role: Send a JSON POST request.
- * Inputs: endpoint and payload.
- * Outputs: Parsed JSON response.
+ * Role: Send a JSON request with a payload.
+ * Inputs: endpoint, method, and payload.
+ * Outputs: Parsed JSON response or null.
  * Errors: Throws on non-OK responses.
  */
-async function postJson(endpoint, payload) {
-  const response = await fetch(endpoint, {
-    method: "POST",
+async function sendJson(endpoint, method, payload) {
+  const options = {
+    method,
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload),
-  });
+  };
+  if (payload) {
+    options.body = JSON.stringify(payload);
+  }
+  const response = await fetch(endpoint, options);
+  const text = await response.text();
   if (!response.ok) {
-    const errorText = await response.text();
-    const message = errorText || `Erreur ${response.status}`;
+    const message = text || `Erreur ${response.status}`;
     throw new Error(message);
   }
-  return response.json();
+  if (!text) {
+    return null;
+  }
+  return JSON.parse(text);
+}
+
+/**
+ * Role: Send a JSON GET request.
+ * Inputs: endpoint.
+ * Outputs: Parsed JSON response.
+ * Errors: Throws on non-OK responses.
+ */
+async function getJson(endpoint) {
+  const response = await fetch(endpoint);
+  const text = await response.text();
+  if (!response.ok) {
+    const message = text || `Erreur ${response.status}`;
+    throw new Error(message);
+  }
+  return JSON.parse(text);
+}
+
+/**
+ * Role: Build a metric item HTML string.
+ * Inputs: label and value.
+ * Outputs: HTML string.
+ * Errors: None.
+ */
+function buildMetricItem(label, value) {
+  return (
+    "<div class=\"metric-item\">" +
+      `<span>${label}</span>` +
+      `<strong>${value}</strong>` +
+    "</div>"
+  );
+}
+
+/**
+ * Role: Build a detail table section.
+ * Inputs: title, headers, and body HTML.
+ * Outputs: HTML string.
+ * Errors: None.
+ */
+function buildDetailTable(title, headers, body) {
+  const headerCells = headers.map((cell) => (
+    `<th>${cell}</th>`
+  )).join("");
+  return (
+    "<div class=\"detail-block\">" +
+      `<h4>${title}</h4>` +
+      "<div class=\"detail-table\">" +
+        "<table>" +
+          "<thead>" +
+            `<tr>${headerCells}</tr>` +
+          "</thead>" +
+          `<tbody>${body}</tbody>` +
+        "</table>" +
+      "</div>" +
+    "</div>"
+  );
+}
+
+/**
+ * Role: Build an empty table row message.
+ * Inputs: message and column count.
+ * Outputs: HTML string.
+ * Errors: None.
+ */
+function buildEmptyRow(message, columns) {
+  return `<tr><td colspan="${columns}">${message}</td></tr>`;
+}
+
+/**
+ * Role: Build mileage table HTML.
+ * Inputs: mileage entries.
+ * Outputs: HTML string.
+ * Errors: None.
+ */
+function buildMileageTable(entries) {
+  const rows = entries.map((entry) => (
+    "<tr>" +
+      `<td>${entry.id}</td>` +
+      `<td>${entry.vehicle_name}</td>` +
+      `<td>${entry.month}</td>` +
+      `<td>${formatNumber(entry.km, 1)} km</td>` +
+    "</tr>"
+  ));
+  const body = rows.length
+    ? rows.join("")
+    : buildEmptyRow("Aucune entrée.", 4);
+  return buildDetailTable(
+    "Kilométrage détaillé",
+    ["ID", "Véhicule", "Mois", "Km"],
+    body
+  );
+}
+
+/**
+ * Role: Build meal expense table HTML.
+ * Inputs: meal entries.
+ * Outputs: HTML string.
+ * Errors: None.
+ */
+function buildMealTable(entries) {
+  const rows = entries.map((entry) => (
+    "<tr>" +
+      `<td>${entry.id}</td>` +
+      `<td>${entry.month}</td>` +
+      `<td>${formatCurrency(entry.meal_cost)}</td>` +
+      `<td>${formatCurrency(entry.deductible_amount)}</td>` +
+    "</tr>"
+  ));
+  const body = rows.length
+    ? rows.join("")
+    : buildEmptyRow("Aucun repas.", 4);
+  return buildDetailTable(
+    "Repas",
+    ["ID", "Mois", "Montant", "Déductible"],
+    body
+  );
+}
+
+/**
+ * Role: Build other expense table HTML.
+ * Inputs: other expense entries.
+ * Outputs: HTML string.
+ * Errors: None.
+ */
+function buildOtherTable(entries) {
+  const rows = entries.map((entry) => (
+    "<tr>" +
+      `<td>${entry.id}</td>` +
+      `<td>${entry.description}</td>` +
+      `<td>${formatCurrency(entry.amount)}</td>` +
+      `<td>${entry.attachment_path || "-"}</td>` +
+    "</tr>"
+  ));
+  const body = rows.length
+    ? rows.join("")
+    : buildEmptyRow("Aucun frais.", 4);
+  return buildDetailTable(
+    "Autres frais",
+    ["ID", "Description", "Montant", "Justificatif"],
+    body
+  );
 }
 
 /**
  * Role: Build the detail panel HTML.
- * Inputs: person - dashboard person summary.
+ * Inputs: person summary and detail data.
  * Outputs: HTML string.
  * Errors: None.
  */
-function buildDetailPanel(person) {
+function buildDetailPanel(person, detail) {
   if (!person) {
     return "<p class=\"hint\">Sélectionnez une personne.</p>";
+  }
+  if (!detail) {
+    return "<p class=\"hint\">Chargement des opérations...</p>";
   }
   const header = (
     `<h4>${person.first_name} ${person.last_name}</h4>`
   );
-  if (person.vehicle_summaries.length === 0) {
-    return (
-      `${header}<p class=\"hint\">Aucun véhicule.</p>`
-    );
-  }
-  const items = person.vehicle_summaries
-    .map((vehicle) => {
-      const deduction = formatCurrency(vehicle.deduction);
-      return (
-        "<div class=\"vehicle-item\">" +
-          `<h4>${vehicle.vehicle_name}</h4>` +
-          `<p>${vehicle.total_km} km • ${deduction}</p>` +
-        "</div>"
-      );
-    })
-    .join("");
+  const metrics = [
+    buildMetricItem(
+      "Kilomètres",
+      `${formatNumber(detail.mileage_total_km, 1)} km`
+    ),
+    buildMetricItem(
+      "Déduction véhicules",
+      formatCurrency(detail.mileage_deduction_total)
+    ),
+    buildMetricItem(
+      "Déduction repas",
+      formatCurrency(detail.meals_deduction_total)
+    ),
+    buildMetricItem(
+      "Autres frais",
+      formatCurrency(detail.other_expenses_total)
+    ),
+    buildMetricItem(
+      "Total annuel",
+      formatCurrency(detail.total_deduction)
+    ),
+  ].join("");
   return (
-    `${header}<div class=\"vehicle-list\">${items}</div>`
+    `${header}` +
+    "<div class=\"detail-metrics\">" +
+      metrics +
+    "</div>" +
+    buildMileageTable(detail.mileage_entries) +
+    buildMealTable(detail.meal_expenses) +
+    buildOtherTable(detail.other_expenses)
   );
 }
 
 /**
  * Role: Render the detail panel.
- * Inputs: person - dashboard person summary.
+ * Inputs: person summary and detail data.
  * Outputs: None.
  * Errors: Throws if the panel is missing.
  */
-function renderDetail(person) {
+function renderDetail(person, detail) {
   const panel = getElement(DETAIL_PANEL_ID);
-  panel.innerHTML = buildDetailPanel(person);
+  panel.innerHTML = buildDetailPanel(person, detail);
 }
 
 /**
@@ -409,9 +610,10 @@ function updateView() {
   state.filtered = sorted;
   renderSummary(state.filtered);
   renderTable(state.filtered, state.selectedId);
-  renderDetail(
-    state.filtered.find((person) => person.person_id === state.selectedId)
+  const selectedPerson = state.filtered.find(
+    (person) => person.person_id === state.selectedId
   );
+  renderDetail(selectedPerson, state.detail);
 }
 
 /**
@@ -425,6 +627,33 @@ function setStatusMessage(message) {
 }
 
 /**
+ * Role: Update the admin status message.
+ * Inputs: message text.
+ * Outputs: None.
+ * Errors: Throws if the status element is missing.
+ */
+function setAdminStatus(message) {
+  setText(ADMIN_STATUS_ID, message);
+}
+
+/**
+ * Role: Read the selected year input.
+ * Inputs: None.
+ * Outputs: Parsed year number or null.
+ * Errors: None.
+ */
+function getSelectedYear() {
+  const year = Number.parseInt(
+    getElement(YEAR_INPUT_ID).value,
+    10
+  );
+  if (!Number.isFinite(year)) {
+    return null;
+  }
+  return year;
+}
+
+/**
  * Role: Build payload for household creation.
  * Inputs: form element.
  * Outputs: Payload object.
@@ -434,7 +663,7 @@ function buildHouseholdPayload(form) {
   const name = parseTextField(
     getFormValue(form, "name"),
     "Nom du foyer",
-    120
+    100
   );
   return {
     name,
@@ -487,7 +716,7 @@ function buildVehiclePayload(form) {
   const name = parseTextField(
     getFormValue(form, "name"),
     "Nom du véhicule",
-    120
+    100
   );
   const powerCv = parseIntegerField(
     getFormValue(form, "power_cv"),
@@ -625,6 +854,275 @@ function buildOtherExpensePayload(form) {
 }
 
 /**
+ * Role: Build payload for household update.
+ * Inputs: form element.
+ * Outputs: Object with id and payload.
+ * Errors: Throws on invalid input.
+ */
+function buildHouseholdUpdatePayload(form) {
+  const id = parseIntegerField(
+    getFormValue(form, "id"),
+    "ID du foyer",
+    1,
+    null
+  );
+  const name = parseTextField(
+    getFormValue(form, "name"),
+    "Nom du foyer",
+    100
+  );
+  return {
+    id,
+    payload: {
+      name,
+    },
+  };
+}
+
+/**
+ * Role: Build payload for person update.
+ * Inputs: form element.
+ * Outputs: Object with id and payload.
+ * Errors: Throws on invalid input.
+ */
+function buildPersonUpdatePayload(form) {
+  const id = parseIntegerField(
+    getFormValue(form, "id"),
+    "ID de la personne",
+    1,
+    null
+  );
+  const householdId = parseIntegerField(
+    getFormValue(form, "household_id"),
+    "ID du foyer",
+    1,
+    null
+  );
+  const firstName = parseTextField(
+    getFormValue(form, "first_name"),
+    "Prénom",
+    80
+  );
+  const lastName = parseTextField(
+    getFormValue(form, "last_name"),
+    "Nom",
+    80
+  );
+  return {
+    id,
+    payload: {
+      household_id: householdId,
+      first_name: firstName,
+      last_name: lastName,
+    },
+  };
+}
+
+/**
+ * Role: Build payload for vehicle update.
+ * Inputs: form element.
+ * Outputs: Object with id and payload.
+ * Errors: Throws on invalid input.
+ */
+function buildVehicleUpdatePayload(form) {
+  const id = parseIntegerField(
+    getFormValue(form, "id"),
+    "ID du véhicule",
+    1,
+    null
+  );
+  const personId = parseIntegerField(
+    getFormValue(form, "person_id"),
+    "ID de la personne",
+    1,
+    null
+  );
+  const name = parseTextField(
+    getFormValue(form, "name"),
+    "Nom du véhicule",
+    100
+  );
+  const powerCv = parseIntegerField(
+    getFormValue(form, "power_cv"),
+    "Puissance fiscale",
+    1,
+    null
+  );
+  return {
+    id,
+    payload: {
+      person_id: personId,
+      name,
+      power_cv: powerCv,
+    },
+  };
+}
+
+/**
+ * Role: Build payload for mileage update.
+ * Inputs: form element.
+ * Outputs: Object with id and payload.
+ * Errors: Throws on invalid input.
+ */
+function buildMileageUpdatePayload(form) {
+  const id = parseIntegerField(
+    getFormValue(form, "id"),
+    "ID du kilométrage",
+    1,
+    null
+  );
+  const personId = parseIntegerField(
+    getFormValue(form, "person_id"),
+    "ID de la personne",
+    1,
+    null
+  );
+  const vehicleId = parseIntegerField(
+    getFormValue(form, "vehicle_id"),
+    "ID du véhicule",
+    1,
+    null
+  );
+  const year = parseIntegerField(
+    getFormValue(form, "year"),
+    "Année",
+    2000,
+    2100
+  );
+  const month = parseIntegerField(
+    getFormValue(form, "month"),
+    "Mois",
+    1,
+    12
+  );
+  const km = parseDecimalField(
+    getFormValue(form, "km"),
+    "Kilomètres",
+    0
+  );
+  return {
+    id,
+    payload: {
+      person_id: personId,
+      vehicle_id: vehicleId,
+      year,
+      month,
+      km,
+    },
+  };
+}
+
+/**
+ * Role: Build payload for meal update.
+ * Inputs: form element.
+ * Outputs: Object with id and payload.
+ * Errors: Throws on invalid input.
+ */
+function buildMealUpdatePayload(form) {
+  const id = parseIntegerField(
+    getFormValue(form, "id"),
+    "ID du repas",
+    1,
+    null
+  );
+  const personId = parseIntegerField(
+    getFormValue(form, "person_id"),
+    "ID de la personne",
+    1,
+    null
+  );
+  const year = parseIntegerField(
+    getFormValue(form, "year"),
+    "Année",
+    2000,
+    2100
+  );
+  const month = parseIntegerField(
+    getFormValue(form, "month"),
+    "Mois",
+    1,
+    12
+  );
+  const mealCost = parseDecimalField(
+    getFormValue(form, "meal_cost"),
+    "Montant repas",
+    0
+  );
+  return {
+    id,
+    payload: {
+      person_id: personId,
+      year,
+      month,
+      meal_cost: mealCost,
+    },
+  };
+}
+
+/**
+ * Role: Build payload for other expense update.
+ * Inputs: form element.
+ * Outputs: Object with id and payload.
+ * Errors: Throws on invalid input.
+ */
+function buildOtherUpdatePayload(form) {
+  const id = parseIntegerField(
+    getFormValue(form, "id"),
+    "ID du frais",
+    1,
+    null
+  );
+  const personId = parseIntegerField(
+    getFormValue(form, "person_id"),
+    "ID de la personne",
+    1,
+    null
+  );
+  const year = parseIntegerField(
+    getFormValue(form, "year"),
+    "Année",
+    2000,
+    2100
+  );
+  const description = parseTextField(
+    getFormValue(form, "description"),
+    "Description",
+    160
+  );
+  const amount = parseDecimalField(
+    getFormValue(form, "amount"),
+    "Montant",
+    0
+  );
+  const attachmentPath = getFormValue(form, "attachment_path");
+  return {
+    id,
+    payload: {
+      person_id: personId,
+      year,
+      description,
+      amount,
+      attachment_path: attachmentPath || null,
+    },
+  };
+}
+
+/**
+ * Role: Read a deletion payload from a form.
+ * Inputs: form element and label.
+ * Outputs: Identifier number.
+ * Errors: Throws on invalid input.
+ */
+function buildDeletePayload(form, label) {
+  return parseIntegerField(
+    getFormValue(form, "id"),
+    label,
+    1,
+    null
+  );
+}
+
+/**
  * Role: Handle form submissions.
  * Inputs: submit event, form id, endpoint, payload builder, success message.
  * Outputs: None.
@@ -642,10 +1140,67 @@ async function handleFormSubmit(
   setFormStatus("Envoi des données...");
   try {
     const payload = buildPayload(form);
-    await postJson(endpoint, payload);
+    await sendJson(endpoint, "POST", payload);
     form.reset();
     setFormStatus(successMessage);
     refreshDashboard();
+    refreshAdminData();
+  } catch (error) {
+    setFormStatus(getErrorMessage(error));
+  }
+}
+
+/**
+ * Role: Handle update form submissions.
+ * Inputs: submit event, form id, endpoint, payload builder, success message.
+ * Outputs: None.
+ * Errors: Displays error status on failure.
+ */
+async function handleUpdateFormSubmit(
+  event,
+  formId,
+  endpoint,
+  buildPayload,
+  successMessage
+) {
+  event.preventDefault();
+  const form = getForm(formId);
+  setFormStatus("Mise à jour en cours...");
+  try {
+    const { id, payload } = buildPayload(form);
+    await sendJson(`${endpoint}/${id}`, "PUT", payload);
+    form.reset();
+    setFormStatus(successMessage);
+    refreshDashboard();
+    refreshAdminData();
+  } catch (error) {
+    setFormStatus(getErrorMessage(error));
+  }
+}
+
+/**
+ * Role: Handle delete form submissions.
+ * Inputs: submit event, form id, endpoint, id builder, success message.
+ * Outputs: None.
+ * Errors: Displays error status on failure.
+ */
+async function handleDeleteFormSubmit(
+  event,
+  formId,
+  endpoint,
+  buildId,
+  successMessage
+) {
+  event.preventDefault();
+  const form = getForm(formId);
+  setFormStatus("Suppression en cours...");
+  try {
+    const id = buildId(form);
+    await sendJson(`${endpoint}/${id}`, "DELETE");
+    form.reset();
+    setFormStatus(successMessage);
+    refreshDashboard();
+    refreshAdminData();
   } catch (error) {
     setFormStatus(getErrorMessage(error));
   }
@@ -669,17 +1224,97 @@ async function fetchDashboard(year) {
 }
 
 /**
+ * Role: Render household rows in the admin table.
+ * Inputs: households list.
+ * Outputs: None.
+ * Errors: Throws if table body is missing.
+ */
+function renderHouseholdsTable(households) {
+  const tableBody = getElement(HOUSEHOLDS_TABLE_ID);
+  const rows = households.map((household) => (
+    "<tr>" +
+      `<td>${household.id}</td>` +
+      `<td>${household.name}</td>` +
+    "</tr>"
+  ));
+  tableBody.innerHTML = rows.join("");
+}
+
+/**
+ * Role: Render person rows in the admin table.
+ * Inputs: people list.
+ * Outputs: None.
+ * Errors: Throws if table body is missing.
+ */
+function renderPersonsTable(people) {
+  const tableBody = getElement(PERSONS_TABLE_ID);
+  const rows = people.map((person) => (
+    "<tr>" +
+      `<td>${person.id}</td>` +
+      `<td>${person.household_name}</td>` +
+      `<td>${person.first_name} ${person.last_name}</td>` +
+    "</tr>"
+  ));
+  tableBody.innerHTML = rows.join("");
+}
+
+/**
+ * Role: Render vehicle rows in the admin table.
+ * Inputs: vehicles list.
+ * Outputs: None.
+ * Errors: Throws if table body is missing.
+ */
+function renderVehiclesTable(vehicles) {
+  const tableBody = getElement(VEHICLES_TABLE_ID);
+  const rows = vehicles.map((vehicle) => (
+    "<tr>" +
+      `<td>${vehicle.id}</td>` +
+      `<td>${vehicle.person_name}</td>` +
+      `<td>${vehicle.name}</td>` +
+      `<td>${vehicle.power_cv}</td>` +
+    "</tr>"
+  ));
+  tableBody.innerHTML = rows.join("");
+}
+
+/**
+ * Role: Fetch admin lists and refresh UI.
+ * Inputs: None.
+ * Outputs: None.
+ * Errors: Displays error on failure.
+ */
+async function refreshAdminData() {
+  setAdminStatus("Chargement des référentiels...");
+  try {
+    const [households, persons, vehicles] = await Promise.all([
+      getJson(API_ENDPOINTS.households),
+      getJson(API_ENDPOINTS.persons),
+      getJson(API_ENDPOINTS.vehicles),
+    ]);
+    state.admin.households = households;
+    state.admin.persons = persons;
+    state.admin.vehicles = vehicles;
+    renderHouseholdsTable(households);
+    renderPersonsTable(persons);
+    renderVehiclesTable(vehicles);
+    setAdminStatus(
+      `${households.length} foyers · ${persons.length} ` +
+      `personnes · ${vehicles.length} véhicules.`
+    );
+  } catch (error) {
+    setAdminStatus("Impossible de charger les référentiels.");
+  }
+}
+
+/**
  * Role: Load dashboard data and refresh UI.
  * Inputs: None.
  * Outputs: None.
  * Errors: Displays error on failure.
  */
 async function refreshDashboard() {
-  const year = Number.parseInt(
-    getElement(YEAR_INPUT_ID).value,
-    10
-  );
-  if (!Number.isFinite(year)) {
+  const year = getSelectedYear();
+  if (year === null) {
     setStatusMessage("Année invalide.");
     return;
   }
@@ -696,12 +1331,43 @@ async function refreshDashboard() {
       household: person.household_name,
     }));
     state.selectedId = null;
+    state.detail = null;
     updateView();
     setStatusMessage(
       `${state.people.length} personne(s) chargée(s) pour ${year}.`
     );
   } catch (error) {
     setStatusMessage("Impossible de charger le tableau de bord.");
+  }
+}
+
+/**
+ * Role: Load detail operations for the selected person.
+ * Inputs: personId.
+ * Outputs: None.
+ * Errors: Displays error message on failure.
+ */
+async function refreshPersonDetail(personId) {
+  if (!personId) {
+    state.detail = null;
+    updateView();
+    return;
+  }
+  const year = getSelectedYear();
+  if (year === null) {
+    setStatusMessage("Année invalide.");
+    return;
+  }
+  state.detail = null;
+  updateView();
+  try {
+    const detail = await getJson(
+      `${PERSON_DETAIL_ENDPOINT}${personId}/details/${year}`
+    );
+    state.detail = detail;
+    updateView();
+  } catch (error) {
+    setStatusMessage("Impossible de charger le détail annuel.");
   }
 }
 
@@ -774,6 +1440,7 @@ function handleRowSelection(event) {
   }
   state.selectedId = personId;
   updateView();
+  refreshPersonDetail(personId);
 }
 
 /**
@@ -786,6 +1453,10 @@ function initializeDashboard() {
   getElement(REFRESH_BUTTON_ID).addEventListener(
     "click",
     refreshDashboard
+  );
+  getElement(ADMIN_REFRESH_ID).addEventListener(
+    "click",
+    refreshAdminData
   );
   getElement(SEARCH_INPUT_ID).addEventListener(
     "input",
@@ -851,12 +1522,133 @@ function initializeDashboard() {
       "Frais divers ajoutés."
     )
   );
+  getForm(HOUSEHOLD_UPDATE_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleUpdateFormSubmit(
+      event,
+      HOUSEHOLD_UPDATE_FORM_ID,
+      API_ENDPOINTS.households,
+      buildHouseholdUpdatePayload,
+      "Foyer mis à jour."
+    )
+  );
+  getForm(HOUSEHOLD_DELETE_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleDeleteFormSubmit(
+      event,
+      HOUSEHOLD_DELETE_FORM_ID,
+      API_ENDPOINTS.households,
+      (form) => buildDeletePayload(form, "ID du foyer"),
+      "Foyer supprimé."
+    )
+  );
+  getForm(PERSON_UPDATE_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleUpdateFormSubmit(
+      event,
+      PERSON_UPDATE_FORM_ID,
+      API_ENDPOINTS.persons,
+      buildPersonUpdatePayload,
+      "Personne mise à jour."
+    )
+  );
+  getForm(PERSON_DELETE_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleDeleteFormSubmit(
+      event,
+      PERSON_DELETE_FORM_ID,
+      API_ENDPOINTS.persons,
+      (form) => buildDeletePayload(form, "ID de la personne"),
+      "Personne supprimée."
+    )
+  );
+  getForm(VEHICLE_UPDATE_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleUpdateFormSubmit(
+      event,
+      VEHICLE_UPDATE_FORM_ID,
+      API_ENDPOINTS.vehicles,
+      buildVehicleUpdatePayload,
+      "Véhicule mis à jour."
+    )
+  );
+  getForm(VEHICLE_DELETE_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleDeleteFormSubmit(
+      event,
+      VEHICLE_DELETE_FORM_ID,
+      API_ENDPOINTS.vehicles,
+      (form) => buildDeletePayload(form, "ID du véhicule"),
+      "Véhicule supprimé."
+    )
+  );
+  getForm(MILEAGE_UPDATE_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleUpdateFormSubmit(
+      event,
+      MILEAGE_UPDATE_FORM_ID,
+      API_ENDPOINTS.mileage,
+      buildMileageUpdatePayload,
+      "Kilométrage mis à jour."
+    )
+  );
+  getForm(MILEAGE_DELETE_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleDeleteFormSubmit(
+      event,
+      MILEAGE_DELETE_FORM_ID,
+      API_ENDPOINTS.mileage,
+      (form) => buildDeletePayload(form, "ID du kilométrage"),
+      "Kilométrage supprimé."
+    )
+  );
+  getForm(MEAL_UPDATE_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleUpdateFormSubmit(
+      event,
+      MEAL_UPDATE_FORM_ID,
+      API_ENDPOINTS.meals,
+      buildMealUpdatePayload,
+      "Repas mis à jour."
+    )
+  );
+  getForm(MEAL_DELETE_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleDeleteFormSubmit(
+      event,
+      MEAL_DELETE_FORM_ID,
+      API_ENDPOINTS.meals,
+      (form) => buildDeletePayload(form, "ID du repas"),
+      "Repas supprimé."
+    )
+  );
+  getForm(OTHER_UPDATE_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleUpdateFormSubmit(
+      event,
+      OTHER_UPDATE_FORM_ID,
+      API_ENDPOINTS.otherExpenses,
+      buildOtherUpdatePayload,
+      "Frais divers mis à jour."
+    )
+  );
+  getForm(OTHER_DELETE_FORM_ID).addEventListener(
+    "submit",
+    (event) => handleDeleteFormSubmit(
+      event,
+      OTHER_DELETE_FORM_ID,
+      API_ENDPOINTS.otherExpenses,
+      (form) => buildDeletePayload(form, "ID du frais"),
+      "Frais divers supprimés."
+    )
+  );
   document.querySelector("table")
     ?.addEventListener("click", handleRowSelection);
   document.querySelector("thead")
     ?.addEventListener("click", handleSort);
   updateSortIndicators();
   refreshDashboard();
+  refreshAdminData();
 }
 
 document.addEventListener("DOMContentLoaded", initializeDashboard);
