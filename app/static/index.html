@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+    <title>Frais Réels - Tableau de bord</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Frais Réels</p>
+          <h1>Tableau de bord annuel</h1>
+          <p class="subtitle">
+            Analyse des déductions par personne, repas et véhicules.
+          </p>
+        </div>
+        <div class="controls">
+          <label class="field">
+            <span>Année fiscale</span>
+            <input
+              id="year-input"
+              type="number"
+              min="2000"
+              max="2100"
+              value="2024"
+            />
+          </label>
+          <button id="refresh-button" type="button">
+            Actualiser
+          </button>
+        </div>
+      </header>
+
+      <section class="summary" aria-label="Résumé annuel">
+        <div class="summary-card">
+          <p>Total déductible</p>
+          <h2 id="total-deduction">0 €</h2>
+        </div>
+        <div class="summary-card">
+          <p>Total repas</p>
+          <h2 id="total-meals">0 €</h2>
+        </div>
+        <div class="summary-card">
+          <p>Total frais divers</p>
+          <h2 id="total-other">0 €</h2>
+        </div>
+        <div class="summary-card">
+          <p>Total véhicules</p>
+          <h2 id="total-vehicles">0 €</h2>
+        </div>
+      </section>
+
+      <section class="filters" aria-label="Filtres">
+        <label class="field">
+          <span>Recherche</span>
+          <input
+            id="search-input"
+            type="search"
+            placeholder="Nom, foyer, véhicule"
+          />
+        </label>
+        <p class="hint" id="status-message">
+          Chargement du tableau de bord...
+        </p>
+      </section>
+
+      <section class="grid">
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Vue annuelle par personne</h3>
+            <p class="hint">
+              Cliquez sur un en-tête pour trier.
+            </p>
+          </div>
+          <div class="table-wrapper">
+            <table aria-describedby="status-message">
+              <thead>
+                <tr>
+                  <th data-key="person">Personne</th>
+                  <th data-key="household">Foyer</th>
+                  <th data-key="meals">Repas</th>
+                  <th data-key="other">Autres</th>
+                  <th data-key="vehicles">Véhicules</th>
+                  <th data-key="total">Total</th>
+                </tr>
+              </thead>
+              <tbody id="people-table"></tbody>
+            </table>
+          </div>
+        </div>
+        <aside class="detail-card" aria-live="polite">
+          <h3>Détail par véhicule</h3>
+          <div id="detail-panel">
+            <p class="hint">Sélectionnez une personne.</p>
+          </div>
+        </aside>
+      </section>
+    </div>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

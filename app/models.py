@@ -132,3 +132,25 @@ class PersonYearSummary(BaseModel):
     meals_deduction: float
     other_expenses: float
     total_deduction: float
+
+
+class DashboardPersonSummary(BaseModel):
+    """Represents a person summary for the dashboard."""
+
+    person_id: int
+    household_name: str
+    first_name: str
+    last_name: str
+    vehicle_summaries: list[VehicleSummary]
+    vehicle_deduction_total: float
+    meals_deduction: float
+    other_expenses: float
+    total_deduction: float
+
+
+class DashboardResponse(BaseModel):
+    """Represents the yearly dashboard response."""
+
+    year: int
+    people: list[DashboardPersonSummary]
+    total_deduction: float
