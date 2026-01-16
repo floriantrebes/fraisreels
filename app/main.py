@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.constants import MILEAGE_SCALE
 from app.db import init_db
 from app.models import (
     DashboardPersonSummary,
@@ -200,6 +201,32 @@ def build_other_entries(
     ]
 
 
+def build_mileage_scale_entries() -> list[MileageScaleEntry]:
+    """Role: Build mileage scale entries for the admin page.
+
+    Inputs: None.
+    Outputs: List of mileage scale entries.
+    Errors: None.
+    """
+
+    entries: list[MileageScaleEntry] = []
+    for power_cv, brackets in sorted(MILEAGE_SCALE.items()):
+        entries.append(
+            MileageScaleEntry(
+                power_cv=power_cv,
+                brackets=[
+                    MileageScaleBracket(
+                        max_km=bracket.max_km,
+                        rate=bracket.rate,
+                        fixed=bracket.fixed,
+                    )
+                    for bracket in brackets
+                ],
+            )
+        )
+    return entries
+
+
 @app.on_event("startup")
 def on_startup() -> None:
     """Initialize database on startup."""
@@ -220,6 +247,18 @@ def root() -> dict[str, str]:
         "status": "ok",
         "service": "Frais Reels API",
     }
+
+
+@app.get("/api/mileage-scale", response_model=list[MileageScaleEntry])
+def mileage_scale() -> list[MileageScaleEntry]:
+    """Role: Return the mileage scale values.
+
+    Inputs: None.
+    Outputs: List of mileage scale entries.
+    Errors: None.
+    """
+
+    return build_mileage_scale_entries()
 
 
 @app.get("/dashboard")

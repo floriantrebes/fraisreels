@@ -100,6 +100,26 @@ button:hover {
   background: var(--accent-dark);
 }
 
+.ghost-button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--accent);
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border 0.2s ease, color 0.2s ease;
+}
+
+.ghost-button:hover {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
 .summary {
   display: grid;
   grid-template-columns:
@@ -462,6 +482,78 @@ td {
 
 tr:hover {
   background: #f8fafc;
+}
+
+.entry-table tfoot td {
+  background: #f8fafc;
+  border-bottom: none;
+}
+
+.entry-table tfoot input,
+.entry-table tfoot select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+  background: #ffffff;
+}
+
+.entry-table tfoot button {
+  width: 100%;
+}
+
+.row-actions {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.menu-trigger {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.menu-trigger:hover {
+  background: #eef2ff;
+  color: var(--accent-dark);
+}
+
+.menu-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  display: none;
+  flex-direction: column;
+  min-width: 140px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  z-index: 10;
+  padding: 6px;
+  gap: 6px;
+}
+
+.row-actions.menu-open .menu-panel {
+  display: flex;
+}
+
+.menu-panel button {
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.menu-panel button:hover {
+  background: #eef2ff;
+  color: var(--accent-dark);
 }
 
 tr.selected {

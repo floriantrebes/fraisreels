@@ -174,6 +174,21 @@ class OtherExpenseResponse(BaseModel):
     attachment_path: str | None
 
 
+class MileageScaleBracket(BaseModel):
+    """Represents a mileage scale bracket."""
+
+    max_km: int | None
+    rate: float
+    fixed: float
+
+
+class MileageScaleEntry(BaseModel):
+    """Represents a mileage scale entry for a fiscal power."""
+
+    power_cv: int
+    brackets: list[MileageScaleBracket]
+
+
 class OtherExpenseUpdate(BaseModel):
     """Represents an other expense update request."""
 
