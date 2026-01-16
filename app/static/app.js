@@ -2,6 +2,7 @@
 
 const DASHBOARD_ENDPOINT = "/api/dashboard/";
 const TABLE_BODY_ID = "people-table";
+const PEOPLE_TABLE_HEAD_ID = "people-table-head";
 const YEAR_INPUT_ID = "year-input";
 const REFRESH_BUTTON_ID = "refresh-button";
 const SEARCH_INPUT_ID = "search-input";
@@ -36,6 +37,8 @@ const MEAL_DELETE_FORM_ID = "meal-delete-form";
 const OTHER_UPDATE_FORM_ID = "other-update-form";
 const OTHER_DELETE_FORM_ID = "other-delete-form";
 const PERSON_DETAIL_ENDPOINT = "/api/people/";
+const DIALOG_TRIGGER_SELECTOR = "[data-dialog-target]";
+const DIALOG_CLOSE_SELECTOR = "[data-dialog-close]";
 
 const API_ENDPOINTS = {
   households: "/households",
@@ -137,6 +140,52 @@ function getForm(formId) {
     throw new Error(`Élément invalide: ${formId}`);
   }
   return form;
+}
+
+/**
+ * Role: Get a dialog element by id.
+ * Inputs: dialogId - DOM dialog id.
+ * Outputs: HTMLDialogElement.
+ * Errors: Throws if the dialog is missing or invalid.
+ */
+function getDialog(dialogId) {
+  const dialog = document.getElementById(dialogId);
+  if (!dialog) {
+    throw new Error(`Fenêtre introuvable: ${dialogId}`);
+  }
+  if (!(dialog instanceof HTMLDialogElement)) {
+    throw new Error(`Fenêtre invalide: ${dialogId}`);
+  }
+  return dialog;
+}
+
+/**
+ * Role: Open a dialog by id.
+ * Inputs: dialogId.
+ * Outputs: None.
+ * Errors: Throws if the dialog is missing.
+ */
+function openDialog(dialogId) {
+  const dialog = getDialog(dialogId);
+  if (!dialog.open) {
+    dialog.showModal();
+  }
+}
+
+/**
+ * Role: Close a dialog for the given form.
+ * Inputs: form element.
+ * Outputs: None.
+ * Errors: None.
+ */
+function closeDialogForForm(form) {
+  const dialog = form.closest("dialog");
+  if (!(dialog instanceof HTMLDialogElement)) {
+    return;
+  }
+  if (dialog.open) {
+    dialog.close();
+  }
 }
 
 /**
@@ -1143,6 +1192,7 @@ async function handleFormSubmit(
     await sendJson(endpoint, "POST", payload);
     form.reset();
     setFormStatus(successMessage);
+    closeDialogForForm(form);
     refreshDashboard();
     refreshAdminData();
   } catch (error) {
@@ -1171,6 +1221,7 @@ async function handleUpdateFormSubmit(
     await sendJson(`${endpoint}/${id}`, "PUT", payload);
     form.reset();
     setFormStatus(successMessage);
+    closeDialogForForm(form);
     refreshDashboard();
     refreshAdminData();
   } catch (error) {
@@ -1199,11 +1250,56 @@ async function handleDeleteFormSubmit(
     await sendJson(`${endpoint}/${id}`, "DELETE");
     form.reset();
     setFormStatus(successMessage);
+    closeDialogForForm(form);
     refreshDashboard();
     refreshAdminData();
   } catch (error) {
     setFormStatus(getErrorMessage(error));
   }
+}
+
+/**
+ * Role: Initialize dialog open/close controls.
+ * Inputs: None.
+ * Outputs: None.
+ * Errors: Throws if a dialog target is missing.
+ */
+function initializeDialogs() {
+  const triggers = document.querySelectorAll(DIALOG_TRIGGER_SELECTOR);
+  triggers.forEach((trigger) => {
+    if (!(trigger instanceof HTMLButtonElement)) {
+      return;
+    }
+    const dialogId = trigger.dataset.dialogTarget;
+    if (!dialogId) {
+      return;
+    }
+    trigger.addEventListener("click", () => openDialog(dialogId));
+  });
+
+  const closers = document.querySelectorAll(DIALOG_CLOSE_SELECTOR);
+  closers.forEach((closer) => {
+    if (!(closer instanceof HTMLButtonElement)) {
+      return;
+    }
+    closer.addEventListener("click", () => {
+      const dialog = closer.closest("dialog");
+      if (dialog instanceof HTMLDialogElement) {
+        dialog.close();
+      }
+    });
+  });
+
+  document.querySelectorAll("dialog").forEach((dialog) => {
+    if (!(dialog instanceof HTMLDialogElement)) {
+      return;
+    }
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) {
+        dialog.close();
+      }
+    });
+  });
 }
 
 /**
@@ -1450,6 +1546,7 @@ function handleRowSelection(event) {
  * Errors: Throws if elements are missing.
  */
 function initializeDashboard() {
+  initializeDialogs();
   getElement(REFRESH_BUTTON_ID).addEventListener(
     "click",
     refreshDashboard
@@ -1642,10 +1739,14 @@ function initializeDashboard() {
       "Frais divers supprimés."
     )
   );
-  document.querySelector("table")
-    ?.addEventListener("click", handleRowSelection);
-  document.querySelector("thead")
-    ?.addEventListener("click", handleSort);
+  getElement(TABLE_BODY_ID).addEventListener(
+    "click",
+    handleRowSelection
+  );
+  getElement(PEOPLE_TABLE_HEAD_ID).addEventListener(
+    "click",
+    handleSort
+  );
   updateSortIndicators();
   refreshDashboard();
   refreshAdminData();
