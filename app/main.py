@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.constants import MILEAGE_SCALE
 from app.db import init_db
 from app.models import (
     DashboardPersonSummary,
@@ -22,6 +23,8 @@ from app.models import (
     MileageEntryCreate,
     MileageEntryResponse,
     MileageEntryUpdate,
+    MileageScaleBracket,
+    MileageScaleEntry,
     OtherExpenseCreate,
     OtherExpenseResponse,
     OtherExpenseUpdate,
@@ -196,6 +199,32 @@ def build_other_entries(
     ]
 
 
+def build_mileage_scale_entries() -> list[MileageScaleEntry]:
+    """Role: Build mileage scale entries for the admin page.
+
+    Inputs: None.
+    Outputs: List of mileage scale entries.
+    Errors: None.
+    """
+
+    entries: list[MileageScaleEntry] = []
+    for power_cv, brackets in sorted(MILEAGE_SCALE.items()):
+        entries.append(
+            MileageScaleEntry(
+                power_cv=power_cv,
+                brackets=[
+                    MileageScaleBracket(
+                        max_km=bracket.max_km,
+                        rate=bracket.rate,
+                        fixed=bracket.fixed,
+                    )
+                    for bracket in brackets
+                ],
+            )
+        )
+    return entries
+
+
 @app.on_event("startup")
 def on_startup() -> None:
     """Initialize database on startup."""
@@ -218,6 +247,18 @@ def root() -> dict[str, str]:
     }
 
 
+@app.get("/api/mileage-scale", response_model=list[MileageScaleEntry])
+def mileage_scale() -> list[MileageScaleEntry]:
+    """Role: Return the mileage scale values.
+
+    Inputs: None.
+    Outputs: List of mileage scale entries.
+    Errors: None.
+    """
+
+    return build_mileage_scale_entries()
+
+
 @app.get("/dashboard")
 def serve_dashboard() -> FileResponse:
     """Role: Serve the dashboard HTML page.
@@ -230,6 +271,21 @@ def serve_dashboard() -> FileResponse:
     if not INDEX_FILE.exists():
         raise HTTPException(status_code=404, detail="Dashboard not found")
     return FileResponse(INDEX_FILE)
+
+
+@app.get("/admin")
+def serve_admin() -> FileResponse:
+    """Role: Serve the administration HTML page.
+
+    Inputs: None.
+    Outputs: HTML file response for the admin page.
+    Errors: 404 if the admin file is missing.
+    """
+
+    admin_file = STATIC_DIR / "admin.html"
+    if not admin_file.exists():
+        raise HTTPException(status_code=404, detail="Admin page not found")
+    return FileResponse(admin_file)
 
 
 @app.post("/households", response_model=HouseholdResponse)
