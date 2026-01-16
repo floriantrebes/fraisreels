@@ -95,6 +95,22 @@ def test_dashboard_returns_year_summary() -> None:
     assert payload["people"][0]["vehicle_deduction_total"] == 2424.0
 
 
+def test_dashboard_html_includes_dialog_actions() -> None:
+    """Role: Ensure the dashboard HTML includes dialog-driven actions.
+
+    Inputs: None.
+    Outputs: HTML response with dialog identifiers.
+    Errors: None.
+    """
+
+    client = TestClient(app)
+    response = client.get("/dashboard")
+
+    assert response.status_code == 200
+    assert "data-dialog-target" in response.text
+    assert "household-dialog" in response.text
+
+
 def test_admin_crud_and_detail_endpoints() -> None:
     """Role: Validate CRUD endpoints and detailed operations.
 
