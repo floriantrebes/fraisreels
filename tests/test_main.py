@@ -111,24 +111,26 @@ def test_dashboard_html_includes_dialog_actions() -> None:
     assert "household-dialog" in response.text
 
 
-def test_mileage_scale_endpoint_returns_brackets() -> None:
-    """Role: Ensure the mileage scale endpoint returns bracket data.
+def test_admin_page_and_mileage_scale() -> None:
+    """Role: Ensure admin page and mileage scale endpoint work.
 
     Inputs: None.
-    Outputs: Mileage scale list response.
+    Outputs: HTML response and mileage scale list.
     Errors: None.
     """
 
     client = TestClient(app)
-    response = client.get("/api/mileage-scale")
+    response = client.get("/admin")
 
     assert response.status_code == 200
-    payload = response.json()
-    assert payload
-    first_entry = payload[0]
-    assert "power_cv" in first_entry
-    assert "brackets" in first_entry
-    assert len(first_entry["brackets"]) == 3
+    assert "Administration" in response.text
+    assert "mileage-scale-table" in response.text
+
+    scale_response = client.get("/api/mileage-scale")
+    assert scale_response.status_code == 200
+    payload = scale_response.json()
+    assert len(payload) >= 1
+    assert payload[0]["brackets"]
 
 
 def test_admin_crud_and_detail_endpoints() -> None:

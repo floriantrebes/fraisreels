@@ -10,34 +10,32 @@
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <div class="page">
+    <div class="page admin-page">
       <header class="page-header">
         <div>
           <p class="eyebrow">Frais Réels</p>
           <h1>Administration</h1>
           <p class="subtitle">
-            Gérez les référentiels et saisissez les opérations.
+            Référentiels et saisie des frais par personne.
           </p>
         </div>
         <div class="controls">
-          <a class="ghost-button" href="/dashboard">
+          <a class="ghost link-button" href="/dashboard">
             Retour au tableau de bord
           </a>
+          <button id="admin-refresh" type="button">
+            Rafraîchir
+          </button>
         </div>
       </header>
 
       <section class="admin" aria-label="Référentiels">
         <div class="forms-header">
           <div>
-            <h2>Référentiels</h2>
+            <h2>Référentiels stables</h2>
             <p class="subtitle">
               Foyers, personnes, véhicules et barème kilométrique.
             </p>
-          </div>
-          <div class="controls">
-            <button id="admin-refresh" type="button">
-              Rafraîchir
-            </button>
           </div>
           <p class="hint" id="admin-status">
             Chargement des référentiels...
@@ -47,7 +45,7 @@
           <div class="table-card">
             <div class="table-header">
               <h3>Foyers</h3>
-              <p class="hint">Identifiants utiles aux créations.</p>
+              <p class="hint">Identifiants utilisés pour les personnes.</p>
             </div>
             <div class="table-wrapper">
               <table>
@@ -57,14 +55,14 @@
                     <th>Nom</th>
                   </tr>
                 </thead>
-                <tbody id="admin-households-table"></tbody>
+                <tbody id="households-table"></tbody>
               </table>
             </div>
           </div>
           <div class="table-card">
             <div class="table-header">
               <h3>Personnes</h3>
-              <p class="hint">Liées à leur foyer de rattachement.</p>
+              <p class="hint">Rattachées à leur foyer.</p>
             </div>
             <div class="table-wrapper">
               <table>
@@ -75,14 +73,14 @@
                     <th>Nom</th>
                   </tr>
                 </thead>
-                <tbody id="admin-persons-table"></tbody>
+                <tbody id="persons-table"></tbody>
               </table>
             </div>
           </div>
           <div class="table-card">
             <div class="table-header">
               <h3>Véhicules</h3>
-              <p class="hint">Flotte professionnelle par personne.</p>
+              <p class="hint">Rattachés à une personne.</p>
             </div>
             <div class="table-wrapper">
               <table>
@@ -90,243 +88,208 @@
                   <tr>
                     <th>ID</th>
                     <th>Personne</th>
-                    <th>Véhicule</th>
+                    <th>Nom</th>
                     <th>CV</th>
                   </tr>
                 </thead>
-                <tbody id="admin-vehicles-table"></tbody>
+                <tbody id="vehicles-table"></tbody>
               </table>
             </div>
           </div>
           <div class="table-card">
             <div class="table-header">
               <h3>Barème kilométrique</h3>
-              <p class="hint">Taux en fonction de la puissance fiscale.</p>
+              <p class="hint">Variables selon la puissance fiscale.</p>
             </div>
             <div class="table-wrapper">
               <table>
                 <thead>
                   <tr>
                     <th>CV</th>
-                    <th>0 → 5 000 km</th>
-                    <th>5 001 → 20 000 km</th>
-                    <th>> 20 000 km</th>
+                    <th>Tranche (km)</th>
+                    <th>Taux</th>
+                    <th>Forfait</th>
                   </tr>
                 </thead>
-                <tbody id="admin-mileage-scale"></tbody>
+                <tbody id="mileage-scale-table"></tbody>
               </table>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="admin" aria-label="Saisie des opérations">
+      <section class="entry" aria-label="Saisie des frais">
         <div class="forms-header">
           <div>
-            <h2>Opérations par personne</h2>
+            <h2>Saisie par personne</h2>
             <p class="subtitle">
-              Saisissez les trajets, repas et frais divers dans un tableau.
+              Ajoutez, modifiez ou supprimez les trajets, repas et frais.
             </p>
           </div>
           <div class="controls">
             <label class="field">
               <span>Personne</span>
-              <select id="admin-person-select"></select>
+              <select id="person-select" required></select>
             </label>
             <label class="field">
               <span>Année</span>
               <input
-                id="admin-year-input"
+                id="entry-year"
                 type="number"
                 min="2000"
                 max="2100"
                 value="2024"
               />
             </label>
-            <button id="admin-operations-refresh" type="button">
-              Charger
+            <button id="entry-refresh" type="button">
+              Charger les données
             </button>
           </div>
-          <p class="hint" id="admin-operations-status">
-            Sélectionnez une personne.
+          <p class="hint" id="entry-status">
+            Sélectionnez une personne pour charger ses frais.
           </p>
         </div>
-        <div class="admin-grid">
+
+        <div class="entry-grid">
           <div class="table-card">
             <div class="table-header">
               <h3>Trajets</h3>
-              <p class="hint">Ajoutez un trajet puis utilisez ⋯.</p>
+              <p class="hint">
+                Ajoutez un trajet et utilisez le menu pour modifier.
+              </p>
             </div>
+            <form id="mileage-add-form" class="table-form">
+              <label class="field">
+                <span>Véhicule</span>
+                <select id="mileage-vehicle" required></select>
+              </label>
+              <label class="field">
+                <span>Mois</span>
+                <input
+                  id="mileage-month"
+                  type="number"
+                  min="1"
+                  max="12"
+                  required
+                />
+              </label>
+              <label class="field">
+                <span>Kilomètres</span>
+                <input
+                  id="mileage-km"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  required
+                />
+              </label>
+              <button type="submit">Ajouter</button>
+            </form>
             <div class="table-wrapper">
-              <table
-                class="entry-table"
-                data-entry-type="mileage"
-                id="mileage-entries-table"
-              >
+              <table>
                 <thead>
                   <tr>
-                    <th>ID</th>
-                    <th>Véhicule</th>
                     <th>Mois</th>
+                    <th>Véhicule</th>
                     <th>Kilomètres</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody></tbody>
-                <tfoot>
-                  <tr>
-                    <td>+</td>
-                    <td>
-                      <select
-                        name="vehicle_id"
-                        aria-label="Véhicule"
-                      ></select>
-                    </td>
-                    <td>
-                      <input
-                        name="month"
-                        type="number"
-                        min="1"
-                        max="12"
-                        placeholder="Mois"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        name="km"
-                        type="number"
-                        min="0"
-                        step="0.1"
-                        placeholder="Km"
-                      />
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        data-add-entry="mileage"
-                      >
-                        Ajouter
-                      </button>
-                    </td>
-                  </tr>
-                </tfoot>
+                <tbody id="mileage-table"></tbody>
               </table>
             </div>
           </div>
+
           <div class="table-card">
             <div class="table-header">
               <h3>Repas</h3>
-              <p class="hint">Saisissez les repas par mois.</p>
+              <p class="hint">Saisie des repas déductibles.</p>
             </div>
+            <form id="meal-add-form" class="table-form">
+              <label class="field">
+                <span>Mois</span>
+                <input
+                  id="meal-month"
+                  type="number"
+                  min="1"
+                  max="12"
+                  required
+                />
+              </label>
+              <label class="field">
+                <span>Coût</span>
+                <input
+                  id="meal-cost"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  required
+                />
+              </label>
+              <button type="submit">Ajouter</button>
+            </form>
             <div class="table-wrapper">
-              <table
-                class="entry-table"
-                data-entry-type="meals"
-                id="meal-entries-table"
-              >
+              <table>
                 <thead>
                   <tr>
-                    <th>ID</th>
                     <th>Mois</th>
-                    <th>Montant</th>
+                    <th>Coût</th>
                     <th>Déductible</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody></tbody>
-                <tfoot>
-                  <tr>
-                    <td>+</td>
-                    <td>
-                      <input
-                        name="month"
-                        type="number"
-                        min="1"
-                        max="12"
-                        placeholder="Mois"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        name="meal_cost"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="Montant"
-                      />
-                    </td>
-                    <td class="hint">Auto.</td>
-                    <td>
-                      <button
-                        type="button"
-                        data-add-entry="meals"
-                      >
-                        Ajouter
-                      </button>
-                    </td>
-                  </tr>
-                </tfoot>
+                <tbody id="meal-table"></tbody>
               </table>
             </div>
           </div>
+
           <div class="table-card">
             <div class="table-header">
               <h3>Frais divers</h3>
-              <p class="hint">Description, montant et justificatif.</p>
+              <p class="hint">Saisie des frais hors repas et trajets.</p>
             </div>
+            <form id="other-add-form" class="table-form">
+              <label class="field">
+                <span>Libellé</span>
+                <input
+                  id="other-description"
+                  type="text"
+                  maxlength="255"
+                  required
+                />
+              </label>
+              <label class="field">
+                <span>Montant</span>
+                <input
+                  id="other-amount"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  required
+                />
+              </label>
+              <label class="field">
+                <span>Pièce jointe</span>
+                <input
+                  id="other-attachment"
+                  type="text"
+                  maxlength="255"
+                  placeholder="facture.pdf"
+                />
+              </label>
+              <button type="submit">Ajouter</button>
+            </form>
             <div class="table-wrapper">
-              <table
-                class="entry-table"
-                data-entry-type="other"
-                id="other-entries-table"
-              >
+              <table>
                 <thead>
                   <tr>
-                    <th>ID</th>
-                    <th>Description</th>
+                    <th>Libellé</th>
                     <th>Montant</th>
-                    <th>Justificatif</th>
+                    <th>Pièce jointe</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody></tbody>
-                <tfoot>
-                  <tr>
-                    <td>+</td>
-                    <td>
-                      <input
-                        name="description"
-                        type="text"
-                        maxlength="160"
-                        placeholder="Description"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        name="amount"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="Montant"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        name="attachment_path"
-                        type="text"
-                        placeholder="Justificatif"
-                      />
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        data-add-entry="other"
-                      >
-                        Ajouter
-                      </button>
-                    </td>
-                  </tr>
-                </tfoot>
+                <tbody id="other-table"></tbody>
               </table>
             </div>
           </div>
@@ -343,26 +306,34 @@
           </button>
         </div>
         <div class="modal-body">
-          <input name="id" type="hidden" />
+          <input id="mileage-edit-id" type="hidden" />
           <label class="field">
             <span>Véhicule</span>
-            <select name="vehicle_id"></select>
-          </label>
-          <label class="field">
-            <span>Année</span>
-            <input name="year" type="number" min="2000" max="2100" />
+            <select id="mileage-edit-vehicle" required></select>
           </label>
           <label class="field">
             <span>Mois</span>
-            <input name="month" type="number" min="1" max="12" />
+            <input
+              id="mileage-edit-month"
+              type="number"
+              min="1"
+              max="12"
+              required
+            />
           </label>
           <label class="field">
             <span>Kilomètres</span>
-            <input name="km" type="number" min="0" step="0.1" />
+            <input
+              id="mileage-edit-km"
+              type="number"
+              min="0"
+              step="0.1"
+              required
+            />
           </label>
         </div>
         <div class="modal-actions">
-          <button type="submit">Mettre à jour</button>
+          <button type="submit">Enregistrer</button>
           <button type="button" class="ghost" data-dialog-close>
             Annuler
           </button>
@@ -379,22 +350,30 @@
           </button>
         </div>
         <div class="modal-body">
-          <input name="id" type="hidden" />
-          <label class="field">
-            <span>Année</span>
-            <input name="year" type="number" min="2000" max="2100" />
-          </label>
+          <input id="meal-edit-id" type="hidden" />
           <label class="field">
             <span>Mois</span>
-            <input name="month" type="number" min="1" max="12" />
+            <input
+              id="meal-edit-month"
+              type="number"
+              min="1"
+              max="12"
+              required
+            />
           </label>
           <label class="field">
-            <span>Montant</span>
-            <input name="meal_cost" type="number" min="0" step="0.01" />
+            <span>Coût</span>
+            <input
+              id="meal-edit-cost"
+              type="number"
+              min="0"
+              step="0.1"
+              required
+            />
           </label>
         </div>
         <div class="modal-actions">
-          <button type="submit">Mettre à jour</button>
+          <button type="submit">Enregistrer</button>
           <button type="button" class="ghost" data-dialog-close>
             Annuler
           </button>
@@ -411,89 +390,37 @@
           </button>
         </div>
         <div class="modal-body">
-          <input name="id" type="hidden" />
+          <input id="other-edit-id" type="hidden" />
           <label class="field">
-            <span>Année</span>
-            <input name="year" type="number" min="2000" max="2100" />
-          </label>
-          <label class="field">
-            <span>Description</span>
-            <input name="description" type="text" maxlength="160" />
+            <span>Libellé</span>
+            <input
+              id="other-edit-description"
+              type="text"
+              maxlength="255"
+              required
+            />
           </label>
           <label class="field">
             <span>Montant</span>
-            <input name="amount" type="number" min="0" step="0.01" />
+            <input
+              id="other-edit-amount"
+              type="number"
+              min="0"
+              step="0.1"
+              required
+            />
           </label>
           <label class="field">
-            <span>Justificatif</span>
-            <input name="attachment_path" type="text" />
+            <span>Pièce jointe</span>
+            <input
+              id="other-edit-attachment"
+              type="text"
+              maxlength="255"
+            />
           </label>
         </div>
         <div class="modal-actions">
-          <button type="submit">Mettre à jour</button>
-          <button type="button" class="ghost" data-dialog-close>
-            Annuler
-          </button>
-        </div>
-      </form>
-    </dialog>
-
-    <dialog id="mileage-delete-dialog" class="modal">
-      <form id="mileage-delete-form" class="modal-form">
-        <div class="modal-header">
-          <h3>Supprimer un trajet</h3>
-          <button type="button" class="icon-button" data-dialog-close>
-            ✕
-          </button>
-        </div>
-        <div class="modal-body">
-          <input name="id" type="hidden" />
-          <p>Confirmez la suppression du trajet.</p>
-        </div>
-        <div class="modal-actions">
-          <button type="submit" class="danger">Supprimer</button>
-          <button type="button" class="ghost" data-dialog-close>
-            Annuler
-          </button>
-        </div>
-      </form>
-    </dialog>
-
-    <dialog id="meal-delete-dialog" class="modal">
-      <form id="meal-delete-form" class="modal-form">
-        <div class="modal-header">
-          <h3>Supprimer un repas</h3>
-          <button type="button" class="icon-button" data-dialog-close>
-            ✕
-          </button>
-        </div>
-        <div class="modal-body">
-          <input name="id" type="hidden" />
-          <p>Confirmez la suppression du repas.</p>
-        </div>
-        <div class="modal-actions">
-          <button type="submit" class="danger">Supprimer</button>
-          <button type="button" class="ghost" data-dialog-close>
-            Annuler
-          </button>
-        </div>
-      </form>
-    </dialog>
-
-    <dialog id="other-delete-dialog" class="modal">
-      <form id="other-delete-form" class="modal-form">
-        <div class="modal-header">
-          <h3>Supprimer un frais divers</h3>
-          <button type="button" class="icon-button" data-dialog-close>
-            ✕
-          </button>
-        </div>
-        <div class="modal-body">
-          <input name="id" type="hidden" />
-          <p>Confirmez la suppression du frais divers.</p>
-        </div>
-        <div class="modal-actions">
-          <button type="submit" class="danger">Supprimer</button>
+          <button type="submit">Enregistrer</button>
           <button type="button" class="ghost" data-dialog-close>
             Annuler
           </button>
