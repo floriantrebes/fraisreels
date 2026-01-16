@@ -22,6 +22,8 @@ from app.models import (
     MileageEntryCreate,
     MileageEntryResponse,
     MileageEntryUpdate,
+    MileageScaleBracketResponse,
+    MileageScaleResponse,
     OtherExpenseCreate,
     OtherExpenseResponse,
     OtherExpenseUpdate,
@@ -71,10 +73,12 @@ from app.services import (
     calculate_meals_total,
     calculate_other_expenses_total,
 )
+from app.constants import MILEAGE_SCALE
 
 app = FastAPI(title="Frais Reels")
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 INDEX_FILE = STATIC_DIR / "index.html"
+ADMIN_FILE = STATIC_DIR / "admin.html"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 YEAR_MIN = 2000
 YEAR_MAX = 2100
@@ -230,6 +234,46 @@ def serve_dashboard() -> FileResponse:
     if not INDEX_FILE.exists():
         raise HTTPException(status_code=404, detail="Dashboard not found")
     return FileResponse(INDEX_FILE)
+
+
+@app.get("/admin")
+def serve_admin() -> FileResponse:
+    """Role: Serve the admin HTML page.
+
+    Inputs: None.
+    Outputs: HTML file response for the admin page.
+    Errors: 404 if the admin file is missing.
+    """
+
+    if not ADMIN_FILE.exists():
+        raise HTTPException(status_code=404, detail="Admin page not found")
+    return FileResponse(ADMIN_FILE)
+
+
+@app.get(
+    "/api/mileage-scale",
+    response_model=list[MileageScaleResponse],
+)
+def list_mileage_scale_endpoint() -> list[MileageScaleResponse]:
+    """List the mileage scale brackets."""
+
+    responses = []
+    for power_cv, brackets in sorted(MILEAGE_SCALE.items()):
+        response_brackets = [
+            MileageScaleBracketResponse(
+                max_km=bracket.max_km,
+                rate=bracket.rate,
+                fixed=bracket.fixed,
+            )
+            for bracket in brackets
+        ]
+        responses.append(
+            MileageScaleResponse(
+                power_cv=power_cv,
+                brackets=response_brackets,
+            )
+        )
+    return responses
 
 
 @app.post("/households", response_model=HouseholdResponse)

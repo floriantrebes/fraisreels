@@ -76,6 +76,15 @@ h1 {
   min-width: 160px;
 }
 
+.field select {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 15px;
+  min-width: 180px;
+  background: #fff;
+}
+
 button {
   border: none;
   background: var(--accent);
@@ -187,11 +196,42 @@ button:hover {
   gap: 16px;
 }
 
+.entry {
+  margin: 32px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .admin-grid {
   display: grid;
   grid-template-columns:
     repeat(auto-fit, minmax(260px, 1fr));
   gap: 16px;
+}
+
+.entry-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.table-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 0 24px 16px;
+}
+
+.table-form button {
+  align-self: flex-end;
+  height: 44px;
+}
+
+.empty {
+  text-align: center;
+  color: var(--muted);
 }
 
 .form-card {
@@ -280,6 +320,17 @@ button:hover {
   background: #e0e7ff;
 }
 
+.link-button {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
 .danger {
   background: #dc2626;
 }
@@ -356,6 +407,57 @@ td {
   padding: 16px 24px;
   border-bottom: 1px solid var(--border);
   font-size: 14px;
+}
+
+.menu-cell {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.menu-button {
+  border-radius: 10px;
+  padding: 6px 10px;
+  background: #eef2ff;
+  color: var(--accent-dark);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.menu-button:hover {
+  background: #e0e7ff;
+}
+
+.row-menu {
+  position: absolute;
+  right: 0;
+  top: 36px;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: var(--shadow);
+  z-index: 5;
+  min-width: 140px;
+}
+
+.row-menu button {
+  background: transparent;
+  color: var(--text);
+  padding: 8px 10px;
+  text-align: left;
+  border-radius: 8px;
+}
+
+.row-menu button:hover {
+  background: #f1f5f9;
+}
+
+.row-menu.is-open {
+  display: flex;
 }
 
 tr:hover {

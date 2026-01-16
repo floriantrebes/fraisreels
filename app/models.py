@@ -184,6 +184,21 @@ class OtherExpenseUpdate(BaseModel):
     attachment_path: str | None = Field(default=None, max_length=255)
 
 
+class MileageScaleBracketResponse(BaseModel):
+    """Represents a mileage scale bracket response."""
+
+    max_km: int | None
+    rate: float
+    fixed: float
+
+
+class MileageScaleResponse(BaseModel):
+    """Represents a mileage scale response."""
+
+    power_cv: int
+    brackets: list[MileageScaleBracketResponse]
+
+
 class MileageEntryDetail(BaseModel):
     """Represents a detailed mileage entry."""
 
