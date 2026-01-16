@@ -111,6 +111,28 @@ def test_dashboard_html_includes_dialog_actions() -> None:
     assert "household-dialog" in response.text
 
 
+def test_admin_page_and_mileage_scale() -> None:
+    """Role: Ensure admin page and mileage scale endpoint work.
+
+    Inputs: None.
+    Outputs: HTML response and mileage scale list.
+    Errors: None.
+    """
+
+    client = TestClient(app)
+    response = client.get("/admin")
+
+    assert response.status_code == 200
+    assert "Administration" in response.text
+    assert "mileage-scale-table" in response.text
+
+    scale_response = client.get("/api/mileage-scale")
+    assert scale_response.status_code == 200
+    payload = scale_response.json()
+    assert len(payload) >= 1
+    assert payload[0]["brackets"]
+
+
 def test_admin_crud_and_detail_endpoints() -> None:
     """Role: Validate CRUD endpoints and detailed operations.
 
