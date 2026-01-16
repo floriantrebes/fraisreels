@@ -9,7 +9,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.constants import MILEAGE_SCALE
 from app.db import init_db
 from app.models import (
     DashboardPersonSummary,
@@ -23,8 +22,8 @@ from app.models import (
     MileageEntryCreate,
     MileageEntryResponse,
     MileageEntryUpdate,
-    MileageScaleBracketResponse,
-    MileageScaleResponse,
+    MileageScaleBracket,
+    MileageScaleEntry,
     OtherExpenseCreate,
     OtherExpenseResponse,
     OtherExpenseUpdate,
@@ -287,32 +286,6 @@ def serve_admin() -> FileResponse:
     if not ADMIN_FILE.exists():
         raise HTTPException(status_code=404, detail="Admin page not found")
     return FileResponse(ADMIN_FILE)
-
-
-@app.get(
-    "/api/mileage-scale",
-    response_model=list[MileageScaleResponse],
-)
-def list_mileage_scale_endpoint() -> list[MileageScaleResponse]:
-    """List the mileage scale brackets."""
-
-    responses = []
-    for power_cv, brackets in sorted(MILEAGE_SCALE.items()):
-        response_brackets = [
-            MileageScaleBracketResponse(
-                max_km=bracket.max_km,
-                rate=bracket.rate,
-                fixed=bracket.fixed,
-            )
-            for bracket in brackets
-        ]
-        responses.append(
-            MileageScaleResponse(
-                power_cv=power_cv,
-                brackets=response_brackets,
-            )
-        )
-    return responses
 
 
 @app.post("/households", response_model=HouseholdResponse)
